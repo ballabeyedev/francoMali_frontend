@@ -26,7 +26,7 @@ export default function ProtectedRoute({ children }) {
   }
 
   // Vérifie rôle
-  if (auth.user.role !== "admin") {
+  if (auth.user.role !== "Admin") {
     return <Navigate to="/francomaliship/auth/login" replace />;
   }
 
