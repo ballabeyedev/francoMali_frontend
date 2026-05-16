@@ -1,0 +1,290 @@
+/* ── Conteneur plein écran ── */
+.login-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f4f5f7;
+    padding: 1rem;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ── Carte centrale ── */
+.login-card {
+    width: 100%;
+    max-width: 400px;
+    background-color: #ffffff;
+    border-radius: 24px;
+    border: 1px solid #e5e7eb;
+    padding: 40px 36px 36px;
+}
+
+/* ── Logo ── */
+.login-logo-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 32px;
+}
+
+.login-logo-mark {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background-color: #f97316;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    flex-shrink: 0;
+}
+
+.login-logo-text {
+    font-size: 15px;
+    font-weight: 500;
+    color: #111827;
+    letter-spacing: -0.2px;
+}
+
+/* ── Titres ── */
+.login-heading {
+    font-size: 22px;
+    font-weight: 500;
+    color: #111827;
+    margin-bottom: 6px;
+}
+
+.login-subheading {
+    font-size: 14px;
+    color: #6b7280;
+    margin-bottom: 28px;
+}
+
+/* ── Formulaire ── */
+.login-form {
+    display: flex;
+    flex-direction: column;
+}
+
+.login-field {
+    margin-bottom: 16px;
+}
+
+.login-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 6px;
+    letter-spacing: 0.2px;
+}
+
+/* ── Champs de saisie ── */
+.login-input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 0 14px;
+    transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
+}
+
+.login-input-row.focused,
+.login-input-row:focus-within {
+    border-color: #f97316;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.09);
+    background-color: #ffffff;
+}
+
+.login-icon {
+    color: #9ca3af;
+    flex-shrink: 0;
+}
+
+.login-input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    color: #111827;
+    padding: 12px 0;
+    font-family: inherit;
+}
+
+.login-input::placeholder {
+    color: #c4c9d1;
+}
+
+/* ── Bouton afficher/masquer mdp ── */
+.login-eye-btn {
+    background: none;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    padding: 0;
+    transition: color 0.15s;
+}
+
+.login-eye-btn:hover {
+    color: #6b7280;
+}
+
+/* ── Lien mot de passe oublié ── */
+.login-forgot-row {
+    text-align: right;
+    margin-bottom: 24px;
+    margin-top: -4px;
+}
+
+/* ── Lien générique ── */
+.login-link {
+    font-size: 12px;
+    color: #f97316;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.login-link:hover {
+    text-decoration: underline;
+}
+
+/* ── Bouton principal ── */
+.login-btn-submit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 13px;
+    background-color: #f97316;
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background-color 0.15s, transform 0.1s;
+}
+
+.login-btn-submit:hover {
+    background-color: #ea6c0a;
+}
+
+.login-btn-submit:active {
+    transform: scale(0.98);
+}
+
+/* ── Séparateur ── */
+.login-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 24px 0;
+}
+
+.login-divider hr {
+    flex: 1;
+    border: none;
+    border-top: 0.5px solid #e5e7eb;
+}
+
+.login-divider span {
+    font-size: 11px;
+    color: #9ca3af;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/* ── Badge de sécurité ── */
+.login-trust-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+/* ── Pied de page ── */
+.login-footer-link {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 13px;
+    color: #9ca3af;
+}
+
+.login-footer-link .login-link {
+    font-size: 13px;
+}
+
+/* ── Responsive mobile ── */
+@media (max-width: 480px) {
+    .login-card {
+        padding: 32px 24px 28px;
+        border-radius: 20px;
+    }
+}
+
+/* ── Alerte erreur API ── */
+.login-alert-error {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    padding: 11px 14px;
+    font-size: 13px;
+    color: #b91c1c;
+    margin-bottom: 20px;
+}
+
+/* ── Erreur champ individuel ── */
+.login-field-error {
+    font-size: 12px;
+    color: #dc2626;
+    margin-top: 5px;
+    padding-left: 2px;
+}
+
+/* ── Champ en erreur ── */
+.login-input-row.error {
+    border-color: #fca5a5;
+    background-color: #fff;
+}
+
+.login-input-row.error:focus-within {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.09);
+}
+
+/* ── Bouton désactivé pendant le chargement ── */
+.login-btn-submit:disabled {
+    background-color: #fdba8c;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ── Spinner ── */
+.login-spinner {
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: login-spin 0.7s linear infinite;
+}
+
+@keyframes login-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
