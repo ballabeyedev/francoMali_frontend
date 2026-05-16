@@ -231,10 +231,10 @@ body {
 
 .db-collapse-btn {
     position: absolute;
-    top: 22px;
-    right: -12px;
-    width: 24px;
-    height: 24px;
+    top: 24px;
+    right: -14px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     background-color: var(--white);
     border: 1px solid var(--gray-200);
@@ -243,14 +243,18 @@ body {
     justify-content: center;
     cursor: pointer;
     color: var(--gray-500);
-    font-size: 13px;
-    transition: background-color 0.15s;
-    z-index: 10;
+    font-size: 14px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .db-collapse-btn:hover {
-    background-color: var(--gray-50);
-    color: var(--gray-700);
+    background-color: var(--orange);
+    color: var(--white);
+    border-color: var(--orange);
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.25);
+    transform: scale(1.1);
 }
 
 /* ══════════════════════════════════════
@@ -342,21 +346,35 @@ body {
     border: 2px solid var(--white);
 }
 
-/* Hamburger — desktop : caché */
 .db-hamburger {
     display: none;
     align-items: center;
     justify-content: center;
-    width: 38px;
+    gap: 8px;
+    padding: 0 12px;
     height: 38px;
     border-radius: 10px;
-    border: 1px solid var(--gray-200);
+    border: 1.5px solid var(--gray-200);
     background-color: var(--white);
     cursor: pointer;
-    color: var(--gray-700);
-    font-size: 21px;
+    color: var(--gray-900);
+    font-size: 18px;
+    transition: all 0.2s ease;
     flex-shrink: 0;
     -webkit-tap-highlight-color: transparent;
+}
+
+.db-hamburger:hover {
+    background-color: var(--gray-50);
+    border-color: var(--orange);
+}
+
+.db-hamburger-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: inherit;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .db-content {

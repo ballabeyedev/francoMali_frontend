@@ -10,7 +10,6 @@ import {
   getColisEnvoyes,
   getColisAttente,
   getNombreColis,
-  getStatistiquesColis,
 } from "../../services/admin.service";
 import "../../assets/css/Dashboard.css";
 
@@ -30,14 +29,12 @@ const NAV_ITEMS = [
   { key: "accueil", label: "Accueil", icon: "ti-home" },
   { key: "colis", label: "Colis", icon: "ti-package" },
   { key: "utilisateurs", label: "Utilisateurs", icon: "ti-users" },
-  { key: "statistiques", label: "Statistiques", icon: "ti-chart-bar" },
 ];
 
 const PAGE_TITLES = {
   accueil: "Tableau de bord",
   colis: "Gestion des colis",
   utilisateurs: "Gestion des utilisateurs",
-  statistiques: "Statistiques",
 };
 
 /* ── Spinner ── */
@@ -100,7 +97,6 @@ export default function Dashboard() {
       case "accueil": return <Accueil />;
       case "colis": return <ListeColis />;
       case "utilisateurs": return <ListeUtilisateurs />;
-      case "statistiques": return <Statistiques />;
       default: return <Accueil />;
     }
   };
@@ -144,12 +140,6 @@ export default function Dashboard() {
           ))}
         </nav>
 
-        {!sidebarCollapsed && <p className="db-nav-section">Système</p>}
-
-        <button className="db-nav-item" title={sidebarCollapsed ? "Paramètres" : undefined}>
-          <i className="ti ti-settings" aria-hidden="true" />
-          {!sidebarCollapsed && <span>Paramètres</span>}
-        </button>
 
         <button
           className="db-nav-item db-nav-item--logout"
@@ -188,20 +178,10 @@ export default function Dashboard() {
             aria-label="Ouvrir le menu"
           >
             <i className="ti ti-menu-2" aria-hidden="true" />
+            <span className="db-hamburger-label">Menu</span>
           </button>
 
           <h1 className="db-page-title">{PAGE_TITLES[selectedMenu]}</h1>
-
-          <div className="db-topbar-right">
-            <span className="db-status-badge">
-              <i className="ti ti-circle-check" aria-hidden="true" />
-              <span className="db-status-text">Système opérationnel</span>
-            </span>
-            <button className="db-notif-btn" aria-label="Notifications">
-              <i className="ti ti-bell" aria-hidden="true" />
-              <span className="db-notif-dot" />
-            </button>
-          </div>
         </header>
 
         <div className="db-content" key={selectedMenu}>
@@ -262,21 +242,18 @@ function Accueil() {
     {
       label: "Colis envoyés",
       value: stats.colis?.total ?? "—",
-      sub: stats.colis?.evolution || "+0% ce mois",
       subType: "success",
       icon: "ti-send",
     },
     {
       label: "En attente",
       value: stats.colis?.enAttente ?? colisAttente.length ?? "—",
-      sub: "À traiter",
       subType: "warning",
       icon: "ti-clock",
     },
     {
       label: "Utilisateurs",
       value: stats.utilisateurs?.total ?? "—",
-      sub: stats.utilisateurs?.evolution || "+0 cette semaine",
       subType: "success",
       icon: "ti-users",
     },
@@ -294,10 +271,6 @@ function Accueil() {
               </div>
             </div>
             <div className="db-stat-value">{s.value}</div>
-            <div className={`db-stat-sub db-stat-sub--${s.subType}`}>
-              <i className={`ti ${s.subType === "success" ? "ti-trending-up" : "ti-alert-triangle"}`} aria-hidden="true" />
-              {s.sub}
-            </div>
           </div>
         ))}
       </div>
@@ -602,10 +575,6 @@ function ListeUtilisateurs() {
                         </>
                       )}
                     </button>
-                    <button className="db-action-btn db-action-btn--info" aria-label="Voir le profil">
-                      <i className="ti ti-eye" aria-hidden="true" />
-                      <span className="db-action-btn-label">Voir</span>
-                    </button>
                   </div>
                 </div>
               );
@@ -670,10 +639,6 @@ function ListeUtilisateurs() {
                               </>
                             )}
                           </button>
-                          <button className="db-action-btn db-action-btn--info" aria-label="Voir le profil" title="Voir le profil">
-                            <i className="ti ti-eye" aria-hidden="true" />
-                            <span className="db-action-btn-label">Voir</span>
-                          </button>
                         </div>
                       </td>
                     </tr>
@@ -684,65 +649,6 @@ function ListeUtilisateurs() {
           </div>
         </>
       )}
-    </div>
-  );
-}
-
-/* ══════════════════════════════════════
-   STATISTIQUES
-══════════════════════════════════════ */
-function Statistiques() {
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const fetchStats = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getStatistiquesColis();
-      setStats(data);
-    } catch {
-      setError("Impossible de charger les statistiques.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchStats(); }, [fetchStats]);
-
-  if (loading) return <Spinner />;
-  if (error) return <ErrorBanner message={error} onRetry={fetchStats} />;
-  if (!stats) return null;
-
-  const statItems = [
-    { label: "Total colis", value: stats.total ?? "—", icon: "ti-package" },
-    { label: "Livrés", value: stats.livres ?? "—", icon: "ti-circle-check" },
-    { label: "En transit", value: stats.enTransit ?? "—", icon: "ti-truck" },
-    { label: "En attente", value: stats.enAttente ?? "—", icon: "ti-clock" },
-    { label: "Poids total (kg)", value: stats.poidsTotal ?? "—", icon: "ti-weight" },
-    {
-      label: "Revenus (€)",
-      value: stats.revenusTotal != null
-        ? Number(stats.revenusTotal).toLocaleString("fr-FR", { minimumFractionDigits: 2 })
-        : "—",
-      icon: "ti-coin",
-    },
-  ];
-
-  return (
-    <div className="db-stats-grid db-stats-grid--6">
-      {statItems.map((s) => (
-        <div className="db-stat-card" key={s.label}>
-          <div className="db-stat-top">
-            <span className="db-stat-label">{s.label}</span>
-            <div className="db-stat-icon">
-              <i className={`ti ${s.icon}`} aria-hidden="true" />
-            </div>
-          </div>
-          <div className="db-stat-value">{s.value}</div>
-        </div>
-      ))}
     </div>
   );
 }
