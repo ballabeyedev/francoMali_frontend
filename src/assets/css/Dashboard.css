@@ -663,8 +663,9 @@ body {
 }
 
 .db-action-btn {
-    width: 32px;
+    min-width: 32px;
     height: 32px;
+    padding: 0 12px;
     border-radius: 8px;
     border: 1px solid var(--gray-200);
     background-color: var(--white);
@@ -672,11 +673,19 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--gray-500);
-    font-size: 15px;
-    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+    gap: 8px;
+    color: var(--gray-700);
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s ease;
     -webkit-tap-highlight-color: transparent;
     flex-shrink: 0;
+}
+
+.db-action-btn-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: inherit;
 }
 
 .db-action-btn i {
@@ -740,6 +749,18 @@ body {
     border-color: #fde68a;
 }
 
+.db-action-btn--info {
+    background-color: var(--blue-light);
+    color: var(--blue) !important;
+    border-color: #bfdbfe;
+}
+
+.db-action-btn--info:hover {
+    background-color: #dbeafe;
+    color: #1d4ed8 !important;
+    border-color: #bfdbfe;
+}
+
 /* Cellule utilisateur */
 .db-user-cell {
     display: flex;
@@ -756,9 +777,9 @@ body {
     color: var(--white);
     border: none;
     border-radius: 9px;
-    padding: 8px 16px;
-    font-size: 13px;
-    font-weight: 600;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 700;
     cursor: pointer;
     font-family: inherit;
     transition: background-color 0.15s;
@@ -989,9 +1010,6 @@ body {
     font-size: 16px;
 }
 
-.db-action-btn-label {
-    display: none;
-}
 
 /* Vue tableau desktop */
 .db-table-desktop {

@@ -602,7 +602,7 @@ function ListeUtilisateurs() {
                         </>
                       )}
                     </button>
-                    <button className="db-action-btn" aria-label="Voir le profil">
+                    <button className="db-action-btn db-action-btn--info" aria-label="Voir le profil">
                       <i className="ti ti-eye" aria-hidden="true" />
                       <span className="db-action-btn-label">Voir</span>
                     </button>
@@ -664,11 +664,15 @@ function ListeUtilisateurs() {
                             {isToggling ? (
                               <span className="db-spinner db-spinner--sm" />
                             ) : (
-                              <i className={`ti ${actif ? "ti-user-off" : "ti-user-check"}`} aria-hidden="true" />
+                              <>
+                                <i className={`ti ${actif ? "ti-user-off" : "ti-user-check"}`} aria-hidden="true" />
+                                <span className="db-action-btn-label">{actif ? "Désactiver" : "Activer"}</span>
+                              </>
                             )}
                           </button>
-                          <button className="db-action-btn" aria-label="Voir le profil" title="Voir le profil">
+                          <button className="db-action-btn db-action-btn--info" aria-label="Voir le profil" title="Voir le profil">
                             <i className="ti ti-eye" aria-hidden="true" />
+                            <span className="db-action-btn-label">Voir</span>
                           </button>
                         </div>
                       </td>
