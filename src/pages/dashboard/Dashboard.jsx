@@ -45,7 +45,7 @@ const PAGE_TITLES = {
   statistiques: "Statistiques",
 };
 
-/* ── Composant spinner ── */
+/* ── Spinner ── */
 function Spinner() {
   return (
     <div className="db-spinner-wrap">
@@ -54,7 +54,7 @@ function Spinner() {
   );
 }
 
-/* ── Composant erreur ── */
+/* ── Erreur ── */
 function ErrorBanner({ message, onRetry }) {
   return (
     <div className="db-error-banner" role="alert">
@@ -76,6 +76,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [selectedMenu, setSelectedMenu] = useState("accueil");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const user = getUser() || { nom: "Admin", email: "admin@francomaliship.com" };
 
@@ -94,6 +95,11 @@ export default function Dashboard() {
     }
   };
 
+  const handleMenuSelect = (key) => {
+    setSelectedMenu(key);
+    setMobileMenuOpen(false);
+  };
+
   const renderContent = () => {
     switch (selectedMenu) {
       case "accueil": return <Accueil />;
@@ -107,8 +113,13 @@ export default function Dashboard() {
   return (
     <div className="db-shell">
 
+      {/* ── Overlay menu mobile ── */}
+      {mobileMenuOpen && (
+        <div className="db-overlay" onClick={() => setMobileMenuOpen(false)} />
+      )}
+
       {/* ── Sidebar ── */}
-      <aside className={`db-sidebar ${sidebarCollapsed ? "db-sidebar--collapsed" : ""}`}>
+      <aside className={`db-sidebar ${sidebarCollapsed ? "db-sidebar--collapsed" : ""} ${mobileMenuOpen ? "db-sidebar--mobile-open" : ""}`}>
 
         <div className="db-brand">
           <div className="db-brand-mark">
@@ -129,7 +140,7 @@ export default function Dashboard() {
             <button
               key={key}
               className={`db-nav-item ${selectedMenu === key ? "db-nav-item--active" : ""}`}
-              onClick={() => setSelectedMenu(key)}
+              onClick={() => handleMenuSelect(key)}
               title={sidebarCollapsed ? label : undefined}
             >
               <i className={`ti ${icon}`} aria-hidden="true" />
@@ -167,6 +178,7 @@ export default function Dashboard() {
           )}
         </div>
 
+        {/* Bouton collapse — visible seulement sur desktop */}
         <button
           className="db-collapse-btn"
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -179,11 +191,21 @@ export default function Dashboard() {
       {/* ── Zone principale ── */}
       <div className="db-main">
         <header className="db-topbar">
+          {/* Bouton hamburger — visible uniquement mobile */}
+          <button
+            className="db-hamburger"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Ouvrir le menu"
+          >
+            <i className="ti ti-menu-2" aria-hidden="true" />
+          </button>
+
           <h1 className="db-page-title">{PAGE_TITLES[selectedMenu]}</h1>
+
           <div className="db-topbar-right">
             <span className="db-status-badge">
               <i className="ti ti-circle-check" aria-hidden="true" />
-              Système opérationnel
+              <span className="db-status-text">Système opérationnel</span>
             </span>
             <button className="db-notif-btn" aria-label="Notifications">
               <i className="ti ti-bell" aria-hidden="true" />
@@ -195,13 +217,27 @@ export default function Dashboard() {
         <div className="db-content" key={selectedMenu}>
           {renderContent()}
         </div>
+
+        {/* ── Navigation mobile en bas ── */}
+        <nav className="db-bottom-nav">
+          {NAV_ITEMS.map(({ key, label, icon }) => (
+            <button
+              key={key}
+              className={`db-bottom-nav-item ${selectedMenu === key ? "db-bottom-nav-item--active" : ""}`}
+              onClick={() => handleMenuSelect(key)}
+            >
+              <i className={`ti ${icon}`} aria-hidden="true" />
+              <span>{label}</span>
+            </button>
+          ))}
+        </nav>
       </div>
     </div>
   );
 }
 
 /* ══════════════════════════════════════
-   ACCUEIL — stats + derniers colis
+   ACCUEIL
 ══════════════════════════════════════ */
 function Accueil() {
   const [stats, setStats] = useState({ colis: null, utilisateurs: null });
@@ -346,11 +382,7 @@ function ListeColis() {
               onChange={(e) => setSearch(e.target.value)}
             />
             {search && (
-              <button
-                className="db-search-clear"
-                onClick={() => setSearch("")}
-                aria-label="Effacer la recherche"
-              >
+              <button className="db-search-clear" onClick={() => setSearch("")} aria-label="Effacer">
                 <i className="ti ti-x" aria-hidden="true" />
               </button>
             )}
@@ -369,9 +401,7 @@ function ListeColis() {
           <span>{search ? "Aucun résultat pour cette recherche" : "Aucun colis trouvé"}</span>
         </div>
       )}
-      {!loading && !error && filtered.length > 0 && (
-        <ColisTable data={filtered} />
-      )}
+      {!loading && !error && filtered.length > 0 && <ColisTable data={filtered} />}
     </div>
   );
 }
@@ -467,10 +497,9 @@ function ListeUtilisateurs() {
       } else {
         await activerUtilisateur(id);
       }
-      // Rafraîchir la liste après toggle
       await fetchUtilisateurs();
     } catch {
-      // Erreur silencieuse — l'état ne change pas
+      // Erreur silencieuse
     } finally {
       setTogglingId(null);
     }
@@ -503,11 +532,7 @@ function ListeUtilisateurs() {
               onChange={(e) => setSearch(e.target.value)}
             />
             {search && (
-              <button
-                className="db-search-clear"
-                onClick={() => setSearch("")}
-                aria-label="Effacer la recherche"
-              >
+              <button className="db-search-clear" onClick={() => setSearch("")} aria-label="Effacer">
                 <i className="ti ti-x" aria-hidden="true" />
               </button>
             )}
@@ -523,79 +548,142 @@ function ListeUtilisateurs() {
       {!loading && !error && filtered.length === 0 && (
         <div className="db-empty">
           <i className="ti ti-users-off" aria-hidden="true" />
-          <span>{search ? "Aucun résultat pour cette recherche" : "Aucun utilisateur trouvé"}</span>
+          <span>{search ? "Aucun résultat" : "Aucun utilisateur trouvé"}</span>
         </div>
       )}
       {!loading && !error && filtered.length > 0 && (
-        <div className="db-table-wrap">
-          <table className="db-table">
-            <thead>
-              <tr>
-                <th>Utilisateur</th>
-                <th>Adresse</th>
-                <th>Téléphone</th>
-                <th>Email</th>
-                <th>Statut</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((u, i) => {
-                const id = u._id || u.id;
-                const actif = isActif(u);
-                const isToggling = togglingId === id;
-                return (
-                  <tr key={id || i}>
-                    <td>
-                      <div className="db-user-cell">
-                        <div className="db-user-avatar db-user-avatar--sm">
-                          {getInitials(`${u.prenom || ""} ${u.nom || ""}`)}
-                        </div>
-                        <div>
-                          <div className="db-td-primary">
-                            {u.prenom} {u.nom}
-                          </div>
-                          <div className="db-td-secondary">
-                            {u.role || "Utilisateur"}
-                          </div>
-                        </div>
+        <>
+          {/* Vue carte sur mobile */}
+          <div className="db-user-cards">
+            {filtered.map((u, i) => {
+              const id = u._id || u.id;
+              const actif = isActif(u);
+              const isToggling = togglingId === id;
+              return (
+                <div key={id || i} className="db-user-card">
+                  <div className="db-user-card-header">
+                    <div className="db-user-cell">
+                      <div className="db-user-avatar db-user-avatar--sm">
+                        {getInitials(`${u.prenom || ""} ${u.nom || ""}`)}
                       </div>
-                    </td>
-                    <td>{u.adresse || "—"}</td>
-                    <td>{u.telephone || "—"}</td>
-                    <td>{u.email || "—"}</td>
-                    <td>
-                      <span className={actif ? "badge badge--success" : "badge badge--danger"}>
-                        <i className={`ti ${actif ? "ti-circle-check" : "ti-circle-x"}`} aria-hidden="true" />
-                        {actif ? "Actif" : "Inactif"}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="db-row-actions">
-                        <button
-                          className={`db-action-btn ${actif ? "db-action-btn--warning" : "db-action-btn--success"}`}
-                          onClick={() => handleToggleActif(u)}
-                          disabled={isToggling}
-                          aria-label={actif ? "Désactiver" : "Activer"}
-                          title={actif ? "Désactiver cet utilisateur" : "Activer cet utilisateur"}
-                        >
-                          {isToggling ? (
-                            <span className="db-spinner db-spinner--sm" />
-                          ) : (
-                            <i className={`ti ${actif ? "ti-user-off" : "ti-user-check"}`} aria-hidden="true" />
-                          )}
-                        </button>
-                        <button className="db-action-btn" aria-label="Voir le profil" title="Voir le profil">
-                          <i className="ti ti-eye" aria-hidden="true" />
-                        </button>
+                      <div>
+                        <div className="db-td-primary">{u.prenom} {u.nom}</div>
+                        <div className="db-td-secondary">{u.role || "Utilisateur"}</div>
                       </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                    </div>
+                    <span className={actif ? "badge badge--success" : "badge badge--danger"}>
+                      <i className={`ti ${actif ? "ti-circle-check" : "ti-circle-x"}`} aria-hidden="true" />
+                      {actif ? "Actif" : "Inactif"}
+                    </span>
+                  </div>
+                  <div className="db-user-card-body">
+                    {u.email && (
+                      <div className="db-user-card-row">
+                        <i className="ti ti-mail" aria-hidden="true" />
+                        <span>{u.email}</span>
+                      </div>
+                    )}
+                    {u.telephone && (
+                      <div className="db-user-card-row">
+                        <i className="ti ti-phone" aria-hidden="true" />
+                        <span>{u.telephone}</span>
+                      </div>
+                    )}
+                    {u.adresse && (
+                      <div className="db-user-card-row">
+                        <i className="ti ti-map-pin" aria-hidden="true" />
+                        <span>{u.adresse}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="db-user-card-actions">
+                    <button
+                      className={`db-action-btn ${actif ? "db-action-btn--warning" : "db-action-btn--success"}`}
+                      onClick={() => handleToggleActif(u)}
+                      disabled={isToggling}
+                      aria-label={actif ? "Désactiver" : "Activer"}
+                    >
+                      {isToggling ? (
+                        <span className="db-spinner db-spinner--sm" />
+                      ) : (
+                        <i className={`ti ${actif ? "ti-user-off" : "ti-user-check"}`} aria-hidden="true" />
+                      )}
+                    </button>
+                    <button className="db-action-btn" aria-label="Voir le profil">
+                      <i className="ti ti-eye" aria-hidden="true" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Vue tableau sur desktop */}
+          <div className="db-table-wrap db-table-desktop">
+            <table className="db-table">
+              <thead>
+                <tr>
+                  <th>Utilisateur</th>
+                  <th>Adresse</th>
+                  <th>Téléphone</th>
+                  <th>Email</th>
+                  <th>Statut</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((u, i) => {
+                  const id = u._id || u.id;
+                  const actif = isActif(u);
+                  const isToggling = togglingId === id;
+                  return (
+                    <tr key={id || i}>
+                      <td>
+                        <div className="db-user-cell">
+                          <div className="db-user-avatar db-user-avatar--sm">
+                            {getInitials(`${u.prenom || ""} ${u.nom || ""}`)}
+                          </div>
+                          <div>
+                            <div className="db-td-primary">{u.prenom} {u.nom}</div>
+                            <div className="db-td-secondary">{u.role || "Utilisateur"}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>{u.adresse || "—"}</td>
+                      <td>{u.telephone || "—"}</td>
+                      <td>{u.email || "—"}</td>
+                      <td>
+                        <span className={actif ? "badge badge--success" : "badge badge--danger"}>
+                          <i className={`ti ${actif ? "ti-circle-check" : "ti-circle-x"}`} aria-hidden="true" />
+                          {actif ? "Actif" : "Inactif"}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="db-row-actions">
+                          <button
+                            className={`db-action-btn ${actif ? "db-action-btn--warning" : "db-action-btn--success"}`}
+                            onClick={() => handleToggleActif(u)}
+                            disabled={isToggling}
+                            aria-label={actif ? "Désactiver" : "Activer"}
+                          >
+                            {isToggling ? (
+                              <span className="db-spinner db-spinner--sm" />
+                            ) : (
+                              <i className={`ti ${actif ? "ti-user-off" : "ti-user-check"}`} aria-hidden="true" />
+                            )}
+                          </button>
+                          <button className="db-action-btn" aria-label="Voir le profil">
+                            <i className="ti ti-eye" aria-hidden="true" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );
@@ -628,7 +716,6 @@ function Statistiques() {
   if (error) return <ErrorBanner message={error} onRetry={fetchStats} />;
   if (!stats) return null;
 
-  // Adapter selon la structure réelle renvoyée par votre API
   const statItems = [
     { label: "Total colis", value: stats.total ?? "—", icon: "ti-package", subType: "neutral" },
     { label: "Livrés", value: stats.livres ?? "—", icon: "ti-circle-check", subType: "success" },
@@ -636,7 +723,8 @@ function Statistiques() {
     { label: "En attente", value: stats.enAttente ?? "—", icon: "ti-clock", subType: "warning" },
     { label: "Poids total (kg)", value: stats.poidsTotal ?? "—", icon: "ti-weight", subType: "neutral" },
     {
-      label: "Revenus totaux (€)", value: stats.revenusTotal != null
+      label: "Revenus totaux (€)",
+      value: stats.revenusTotal != null
         ? Number(stats.revenusTotal).toLocaleString("fr-FR", { minimumFractionDigits: 2 })
         : "—",
       icon: "ti-coin", subType: "success"
