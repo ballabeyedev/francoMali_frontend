@@ -16,12 +16,7 @@ import "../../assets/css/Dashboard.css";
 
 /* ── Helpers ── */
 const getInitials = (name = "") =>
-  name
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+  name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
 
 const STATUT_CONFIG = {
   livré: { label: "Livré", className: "badge badge--success", icon: "ti-circle-check" },
@@ -82,16 +77,16 @@ export default function Dashboard() {
 
   const handleLogout = async () => {
     const result = await Swal.fire({
-      title: 'Confirmer la déconnexion',
-      text: 'Êtes-vous sûr de vouloir vous déconnecter ?',
-      icon: 'warning',
+      title: "Confirmer la déconnexion",
+      text: "Êtes-vous sûr de vouloir vous déconnecter ?",
+      icon: "warning",
       showCancelButton: true,
-      confirmButtonText: 'Oui, déconnecter',
-      cancelButtonText: 'Annuler'
+      confirmButtonText: "Oui, déconnecter",
+      cancelButtonText: "Annuler",
     });
     if (result.isConfirmed) {
       logout();
-      navigate('/francomaliship/auth/login');
+      navigate("/francomaliship/auth/login");
     }
   };
 
@@ -113,19 +108,19 @@ export default function Dashboard() {
   return (
     <div className="db-shell">
 
-      {/* ── Overlay menu mobile ── */}
+      {/* Overlay mobile */}
       {mobileMenuOpen && (
         <div className="db-overlay" onClick={() => setMobileMenuOpen(false)} />
       )}
 
       {/* ── Sidebar ── */}
-      <aside className={`db-sidebar ${sidebarCollapsed ? "db-sidebar--collapsed" : ""} ${mobileMenuOpen ? "db-sidebar--mobile-open" : ""}`}>
-
+      <aside
+        className={`db-sidebar ${sidebarCollapsed ? "db-sidebar--collapsed" : ""} ${mobileMenuOpen ? "db-sidebar--mobile-open" : ""}`}
+      >
         <div className="db-brand">
           <div className="db-brand-mark">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-              fill="none" stroke="currentColor" strokeWidth="1.8"
-              strokeLinecap="round" strokeLinejoin="round">
+              fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 17h18M3 17V7l6-4h6l6 4v10M3 17l3 3h12l3-3" />
               <path d="M9 3v8m6-8v8" />
             </svg>
@@ -151,10 +146,7 @@ export default function Dashboard() {
 
         {!sidebarCollapsed && <p className="db-nav-section">Système</p>}
 
-        <button
-          className="db-nav-item"
-          title={sidebarCollapsed ? "Paramètres" : undefined}
-        >
+        <button className="db-nav-item" title={sidebarCollapsed ? "Paramètres" : undefined}>
           <i className="ti ti-settings" aria-hidden="true" />
           {!sidebarCollapsed && <span>Paramètres</span>}
         </button>
@@ -178,7 +170,6 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Bouton collapse — visible seulement sur desktop */}
         <button
           className="db-collapse-btn"
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -191,7 +182,6 @@ export default function Dashboard() {
       {/* ── Zone principale ── */}
       <div className="db-main">
         <header className="db-topbar">
-          {/* Bouton hamburger — visible uniquement mobile */}
           <button
             className="db-hamburger"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -218,7 +208,7 @@ export default function Dashboard() {
           {renderContent()}
         </div>
 
-        {/* ── Navigation mobile en bas ── */}
+        {/* Navigation mobile en bas */}
         <nav className="db-bottom-nav">
           {NAV_ITEMS.map(({ key, label, icon }) => (
             <button
@@ -256,7 +246,7 @@ function Accueil() {
       ]);
       setStats({ colis: nbColis, utilisateurs: nbUtilisateurs });
       setColisAttente(attente?.colis || attente || []);
-    } catch (err) {
+    } catch {
       setError("Impossible de charger les données du tableau de bord.");
     } finally {
       setLoading(false);
@@ -305,10 +295,7 @@ function Accueil() {
             </div>
             <div className="db-stat-value">{s.value}</div>
             <div className={`db-stat-sub db-stat-sub--${s.subType}`}>
-              <i
-                className={`ti ${s.subType === "success" ? "ti-trending-up" : "ti-alert-triangle"}`}
-                aria-hidden="true"
-              />
+              <i className={`ti ${s.subType === "success" ? "ti-trending-up" : "ti-alert-triangle"}`} aria-hidden="true" />
               {s.sub}
             </div>
           </div>
@@ -492,7 +479,7 @@ function ListeUtilisateurs() {
     const id = user._id || user.id;
     setTogglingId(id);
     try {
-      if (user.actif || user.isActive || user.active) {
+      if (isActif(user)) {
         await desactiverUtilisateur(id);
       } else {
         await activerUtilisateur(id);
@@ -551,9 +538,10 @@ function ListeUtilisateurs() {
           <span>{search ? "Aucun résultat" : "Aucun utilisateur trouvé"}</span>
         </div>
       )}
+
       {!loading && !error && filtered.length > 0 && (
         <>
-          {/* Vue carte sur mobile */}
+          {/* ── Vue cartes MOBILE ── */}
           <div className="db-user-cards">
             {filtered.map((u, i) => {
               const id = u._id || u.id;
@@ -576,6 +564,7 @@ function ListeUtilisateurs() {
                       {actif ? "Actif" : "Inactif"}
                     </span>
                   </div>
+
                   <div className="db-user-card-body">
                     {u.email && (
                       <div className="db-user-card-row">
@@ -596,6 +585,7 @@ function ListeUtilisateurs() {
                       </div>
                     )}
                   </div>
+
                   <div className="db-user-card-actions">
                     <button
                       className={`db-action-btn ${actif ? "db-action-btn--warning" : "db-action-btn--success"}`}
@@ -606,11 +596,15 @@ function ListeUtilisateurs() {
                       {isToggling ? (
                         <span className="db-spinner db-spinner--sm" />
                       ) : (
-                        <i className={`ti ${actif ? "ti-user-off" : "ti-user-check"}`} aria-hidden="true" />
+                        <>
+                          <i className={`ti ${actif ? "ti-user-off" : "ti-user-check"}`} aria-hidden="true" />
+                          <span className="db-action-btn-label">{actif ? "Désactiver" : "Activer"}</span>
+                        </>
                       )}
                     </button>
                     <button className="db-action-btn" aria-label="Voir le profil">
                       <i className="ti ti-eye" aria-hidden="true" />
+                      <span className="db-action-btn-label">Voir</span>
                     </button>
                   </div>
                 </div>
@@ -618,7 +612,7 @@ function ListeUtilisateurs() {
             })}
           </div>
 
-          {/* Vue tableau sur desktop */}
+          {/* ── Vue tableau DESKTOP ── */}
           <div className="db-table-wrap db-table-desktop">
             <table className="db-table">
               <thead>
@@ -665,6 +659,7 @@ function ListeUtilisateurs() {
                             onClick={() => handleToggleActif(u)}
                             disabled={isToggling}
                             aria-label={actif ? "Désactiver" : "Activer"}
+                            title={actif ? "Désactiver cet utilisateur" : "Activer cet utilisateur"}
                           >
                             {isToggling ? (
                               <span className="db-spinner db-spinner--sm" />
@@ -672,7 +667,7 @@ function ListeUtilisateurs() {
                               <i className={`ti ${actif ? "ti-user-off" : "ti-user-check"}`} aria-hidden="true" />
                             )}
                           </button>
-                          <button className="db-action-btn" aria-label="Voir le profil">
+                          <button className="db-action-btn" aria-label="Voir le profil" title="Voir le profil">
                             <i className="ti ti-eye" aria-hidden="true" />
                           </button>
                         </div>
@@ -717,17 +712,17 @@ function Statistiques() {
   if (!stats) return null;
 
   const statItems = [
-    { label: "Total colis", value: stats.total ?? "—", icon: "ti-package", subType: "neutral" },
-    { label: "Livrés", value: stats.livres ?? "—", icon: "ti-circle-check", subType: "success" },
-    { label: "En transit", value: stats.enTransit ?? "—", icon: "ti-truck", subType: "info" },
-    { label: "En attente", value: stats.enAttente ?? "—", icon: "ti-clock", subType: "warning" },
-    { label: "Poids total (kg)", value: stats.poidsTotal ?? "—", icon: "ti-weight", subType: "neutral" },
+    { label: "Total colis", value: stats.total ?? "—", icon: "ti-package" },
+    { label: "Livrés", value: stats.livres ?? "—", icon: "ti-circle-check" },
+    { label: "En transit", value: stats.enTransit ?? "—", icon: "ti-truck" },
+    { label: "En attente", value: stats.enAttente ?? "—", icon: "ti-clock" },
+    { label: "Poids total (kg)", value: stats.poidsTotal ?? "—", icon: "ti-weight" },
     {
-      label: "Revenus totaux (€)",
+      label: "Revenus (€)",
       value: stats.revenusTotal != null
         ? Number(stats.revenusTotal).toLocaleString("fr-FR", { minimumFractionDigits: 2 })
         : "—",
-      icon: "ti-coin", subType: "success"
+      icon: "ti-coin",
     },
   ];
 
