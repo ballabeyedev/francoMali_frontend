@@ -690,39 +690,54 @@ body {
 }
 
 .db-action-btn--danger {
-    background-color: var(--red-light);
-    color: var(--red);
-    border-color: var(--red-border);
+    background-color: #fef2f2;
+    color: #dc2626 !important;
+    border-color: #fecaca;
+}
+
+.db-action-btn--danger i,
+.db-action-btn--danger svg {
+    color: #dc2626 !important;
 }
 
 .db-action-btn--danger:hover {
     background-color: #fee2e2;
-    color: #b91c1c;
-    border-color: var(--red-border);
+    color: #b91c1c !important;
+    border-color: #fecaca;
 }
 
 .db-action-btn--success {
-    background-color: var(--green-light);
-    color: var(--green);
-    border-color: var(--green-border);
+    background-color: #ecfdf5;
+    color: #059669 !important;
+    border-color: #a7f3d0;
+}
+
+.db-action-btn--success i,
+.db-action-btn--success svg {
+    color: #059669 !important;
 }
 
 .db-action-btn--success:hover {
     background-color: #d1fae5;
-    color: #047857;
-    border-color: var(--green-border);
+    color: #047857 !important;
+    border-color: #a7f3d0;
 }
 
 .db-action-btn--warning {
-    background-color: var(--yellow-light);
-    color: var(--yellow);
-    border-color: var(--yellow-border);
+    background-color: #fffbeb;
+    color: #d97706 !important;
+    border-color: #fde68a;
+}
+
+.db-action-btn--warning i,
+.db-action-btn--warning svg {
+    color: #d97706 !important;
 }
 
 .db-action-btn--warning:hover {
     background-color: #fef3c7;
-    color: #b45309;
-    border-color: var(--yellow-border);
+    color: #b45309 !important;
+    border-color: #fde68a;
 }
 
 /* Cellule utilisateur */
