@@ -150,7 +150,7 @@ export const modifierPassword = async (id, ancienPassword, nouveauPassword) => {
   try {
     logRequest(name, { id, ancienPassword: "***", nouveauPassword: "***" });
 
-    const res = await api.put(`/admin/modifier-password/${id}`, {
+    const res = await api.put(`/auth/modifier-password/${id}`, {
       ancienPassword,
       nouveauPassword
     });
@@ -169,7 +169,7 @@ export const modifierInfo = async (id, data) => {
   try {
     logRequest(name, { id, data });
 
-    const res = await api.put(`/admin/modifier-profil/${id}`, data);
+    const res = await api.put(`/auth/modifier-profil/${id}`, data);
 
     logResponse(name, res);
     return res.data;
@@ -185,7 +185,7 @@ export const oublierPassword = async (email) => {
   try {
     logRequest(name, { email });
 
-    const res = await api.post("/admin/oublier-password", { email });
+    const res = await api.post("/auth/oublier-password", { email });
 
     logResponse(name, res);
     return res.data;
@@ -201,7 +201,7 @@ export const resetPassword = async (token, password) => {
   try {
     logRequest(name, { token, password: "***" });
 
-    const res = await api.post(`/admin/reset-password/${token}`, {
+    const res = await api.post(`/auth/reset-password/${token}`, {
       password
     });
 

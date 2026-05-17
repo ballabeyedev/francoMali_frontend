@@ -759,7 +759,7 @@ function Profil({ user, onUpdateUser }) {
     setInfoError(null);
     setInfoSubmitting(true);
     try {
-      const responseData = await modifierInfo(infoForm);
+      const responseData = await modifierInfo(user.id, infoForm);
 
       // On capture l'utilisateur renvoyé par l'API
       const updatedUser = responseData.data || responseData.user || responseData;
@@ -799,7 +799,7 @@ function Profil({ user, onUpdateUser }) {
     setPasswordError(null);
     setPasswordSubmitting(true);
     try {
-      await modifierPassword(passwordForm.oldPassword, passwordForm.newPassword);
+      await modifierPassword(user.id, passwordForm.oldPassword, passwordForm.newPassword);
 
       Swal.fire({
         title: "Succès !",
