@@ -297,38 +297,44 @@ function Accueil() {
     {
       label: "Total Colis",
       value: stats.colis?.nombre_colis ?? "—",
-      subType: "success",
       icon: "ti-package",
+      bg: "#fff7ed",
+      color: "#ea580c"
     },
     {
       label: "Colis en attente",
       value: stats.enAttente?.nombre_colis ?? "—",
-      subType: "warning",
       icon: "ti-clock",
+      bg: "#fefce8",
+      color: "#ca8a04"
     },
     {
       label: "Colis récupérés",
       value: stats.recupere?.nombre_colis ?? "—",
-      subType: "info",
       icon: "ti-truck",
+      bg: "#faf5ff",
+      color: "#9333ea"
     },
     {
       label: "Colis livrés",
       value: stats.livre?.nombre_colis ?? "—",
-      subType: "success",
       icon: "ti-circle-check",
+      bg: "#f0fdf4",
+      color: "#16a34a"
     },
     {
       label: "Utilisateurs",
       value: stats.utilisateurs?.total ?? "—",
-      subType: "success",
       icon: "ti-users",
+      bg: "#f0f9ff",
+      color: "#0284c7"
     },
     {
       label: "Administrateurs",
       value: stats.admins?.data ?? "—",
-      subType: "info",
       icon: "ti-shield",
+      bg: "#f0fdfa",
+      color: "#0d9488"
     },
   ];
 
@@ -339,8 +345,18 @@ function Accueil() {
           <div className="db-stat-card" key={s.label}>
             <div className="db-stat-top">
               <span className="db-stat-label">{s.label}</span>
-              <div className="db-stat-icon">
-                <i className={`ti ${s.icon}`} aria-hidden="true" />
+              <div
+                className="db-stat-icon"
+                style={{
+                  backgroundColor: s.bg,
+                  border: `1px solid ${s.bg}`
+                }}
+              >
+                <i
+                  className={`ti ${s.icon}`}
+                  aria-hidden="true"
+                  style={{ color: s.color }}
+                />
               </div>
             </div>
             <div className="db-stat-value">{s.value}</div>

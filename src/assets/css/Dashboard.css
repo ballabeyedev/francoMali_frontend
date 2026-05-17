@@ -1852,6 +1852,6 @@ body {
 }
 
 .db-btn-refresh i {
-    color: inherit;
-    font-weight: 700;
+    color: inherit !important;
+    display: inline-block;
 }
