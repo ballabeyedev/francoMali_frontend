@@ -144,13 +144,16 @@ export const getStatistiquesColis = async () => {
 
 /* ========================= MODIFIER PROFIL ADMIN ========================= */
 
-export const modifierPassword = async (oldPassword, newPassword) => {
+export const modifierPassword = async (id, ancienPassword, nouveauPassword) => {
   const name = "Modifier mot de passe admin";
-  try {
-    logRequest(name, { oldPassword: "***", newPassword: "***" });
 
-    // Appel à l'API backend
-    const res = await api.put("/admin/modifier-password", { oldPassword, newPassword });
+  try {
+    logRequest(name, { id, ancienPassword: "***", nouveauPassword: "***" });
+
+    const res = await api.put(`/admin/modifier-password/${id}`, {
+      ancienPassword,
+      nouveauPassword
+    });
 
     logResponse(name, res);
     return res.data;
@@ -160,13 +163,47 @@ export const modifierPassword = async (oldPassword, newPassword) => {
   }
 };
 
-export const modifierInfo = async (data) => {
+export const modifierInfo = async (id, data) => {
   const name = "Modifier informations admin";
-  try {
-    logRequest(name, data);
 
-    // Appel à l'API backend
-    const res = await api.put("/admin/modifier-info", data);
+  try {
+    logRequest(name, { id, data });
+
+    const res = await api.put(`/admin/modifier-profil/${id}`, data);
+
+    logResponse(name, res);
+    return res.data;
+  } catch (error) {
+    logError(name, error);
+    throw error;
+  }
+};
+
+export const oublierPassword = async (email) => {
+  const name = "Oublier mot de passe";
+
+  try {
+    logRequest(name, { email });
+
+    const res = await api.post("/admin/oublier-password", { email });
+
+    logResponse(name, res);
+    return res.data;
+  } catch (error) {
+    logError(name, error);
+    throw error;
+  }
+};
+
+export const resetPassword = async (token, password) => {
+  const name = "Reset mot de passe";
+
+  try {
+    logRequest(name, { token, password: "***" });
+
+    const res = await api.post(`/admin/reset-password/${token}`, {
+      password
+    });
 
     logResponse(name, res);
     return res.data;
