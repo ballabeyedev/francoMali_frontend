@@ -709,6 +709,7 @@ function ListeUtilisateurs() {
    MON PROFIL (VUE ADMIN)
    ══════════════════════════════════════ */
 function Profil({ user, onUpdateUser }) {
+  const navigate = useNavigate();
   const initials = getInitials(user.nom || "Admin");
   const fullNom = `${user.prenom || ""} ${user.nom || "Admin"}`;
 
@@ -777,13 +778,19 @@ function Profil({ user, onUpdateUser }) {
 
       Swal.fire({
         title: "Mis à jour !",
-        text: "Vos informations personnelles ont été modifiées avec succès.",
+        text: "Vos informations personnelles ont été modifiées avec succès. Veuillez vous reconnecter.",
         icon: "success",
         timer: 2000,
         showConfirmButton: false,
       });
 
       setShowInfoModal(false);
+
+      // Déconnexion et redirection vers le login après le message de succès (2s)
+      setTimeout(() => {
+        logout();
+        navigate("/francomaliship/auth/login");
+      }, 2000);
     } catch (error) {
       // Capturer le message précis renvoyé par le backend
       const errMsg = error.response?.data?.message || error.response?.data?.error || error.message || "Une erreur est survenue lors de la mise à jour.";
@@ -803,7 +810,7 @@ function Profil({ user, onUpdateUser }) {
 
       Swal.fire({
         title: "Succès !",
-        text: "Votre mot de passe a été modifié avec succès.",
+        text: "Votre mot de passe a été modifié avec succès. Veuillez vous reconnecter.",
         icon: "success",
         timer: 2000,
         showConfirmButton: false,
@@ -811,6 +818,12 @@ function Profil({ user, onUpdateUser }) {
 
       setShowPasswordModal(false);
       setPasswordForm({ oldPassword: "", newPassword: "" });
+
+      // Déconnexion et redirection vers le login après le message de succès (2s)
+      setTimeout(() => {
+        logout();
+        navigate("/francomaliship/auth/login");
+      }, 2000);
     } catch (error) {
       // Capturer le message précis renvoyé par le backend
       const errMsg = error.response?.data?.message || error.response?.data?.error || error.message || "Une erreur est survenue.";
