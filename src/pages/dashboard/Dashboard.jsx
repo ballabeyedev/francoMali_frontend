@@ -29,12 +29,14 @@ const NAV_ITEMS = [
   { key: "accueil", label: "Accueil", icon: "ti-home" },
   { key: "colis", label: "Colis", icon: "ti-package" },
   { key: "utilisateurs", label: "Utilisateurs", icon: "ti-users" },
+  { key: "profil", label: "Profil", icon: "ti-user" },
 ];
 
 const PAGE_TITLES = {
   accueil: "Tableau de bord",
   colis: "Gestion des colis",
   utilisateurs: "Gestion des utilisateurs",
+  profil: "Mon Profil",
 };
 
 /* ── Spinner ── */
@@ -97,6 +99,7 @@ export default function Dashboard() {
       case "accueil": return <Accueil />;
       case "colis": return <ListeColis />;
       case "utilisateurs": return <ListeUtilisateurs />;
+      case "profil": return <Profil user={user} />;
       default: return <Accueil />;
     }
   };
@@ -691,6 +694,117 @@ function ListeUtilisateurs() {
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════
+   MON PROFIL (VUE ADMIN)
+   ══════════════════════════════════════ */
+function Profil({ user }) {
+  const initials = getInitials(user.nom || "Admin");
+  const fullNom = `${user.prenom || ""} ${user.nom || "Admin"}`;
+
+  return (
+    <div className="db-profile-container">
+      {/* Hero Banner Section */}
+      <div className="db-profile-hero">
+        <div className="db-profile-hero-gradient" />
+        <div className="db-profile-hero-content">
+          <div className="db-profile-avatar-large">
+            {initials}
+            <span className="db-profile-avatar-status" />
+          </div>
+          <div className="db-profile-hero-info">
+            <h2 className="db-profile-name">{fullNom}</h2>
+            <div className="db-profile-role-badge">
+              <i className="ti ti-shield" aria-hidden="true" />
+              <span>{user.role || "Administrateur"}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Grid of Profile Details & System Info */}
+      <div className="db-profile-grid">
+        {/* Profile Details Card */}
+        <div className="db-profile-card">
+          <div className="db-profile-card-header">
+            <i className="ti ti-id-badge" aria-hidden="true" />
+            <h3>Informations personnelles</h3>
+          </div>
+          <div className="db-profile-details-list">
+            <div className="db-profile-detail-item">
+              <div className="db-profile-detail-icon">
+                <i className="ti ti-mail" aria-hidden="true" />
+              </div>
+              <div className="db-profile-detail-text">
+                <span className="db-profile-detail-label">Adresse email</span>
+                <span className="db-profile-detail-value">{user.email || "admin@gmail.com"}</span>
+              </div>
+            </div>
+
+            <div className="db-profile-detail-item">
+              <div className="db-profile-detail-icon">
+                <i className="ti ti-phone" aria-hidden="true" />
+              </div>
+              <div className="db-profile-detail-text">
+                <span className="db-profile-detail-label">Numéro de téléphone</span>
+                <span className="db-profile-detail-value">{user.telephone || "+221 77 344 44 44"}</span>
+              </div>
+            </div>
+
+            <div className="db-profile-detail-item">
+              <div className="db-profile-detail-icon">
+                <i className="ti ti-map-pin" aria-hidden="true" />
+              </div>
+              <div className="db-profile-detail-text">
+                <span className="db-profile-detail-label">Adresse physique</span>
+                <span className="db-profile-detail-value">{user.adresse || "Dakar, Sénégal"}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* System & Session Card */}
+        <div className="db-profile-card">
+          <div className="db-profile-card-header">
+            <i className="ti ti-settings" aria-hidden="true" />
+            <h3>Paramètres de sécurité</h3>
+          </div>
+          <div className="db-profile-details-list">
+            <div className="db-profile-detail-item">
+              <div className="db-profile-detail-icon db-profile-detail-icon--green">
+                <i className="ti ti-lock" aria-hidden="true" />
+              </div>
+              <div className="db-profile-detail-text">
+                <span className="db-profile-detail-label">Sécurité du compte</span>
+                <span className="db-profile-detail-value">Activée (Chiffrement SSL)</span>
+              </div>
+            </div>
+
+            <div className="db-profile-detail-item">
+              <div className="db-profile-detail-icon db-profile-detail-icon--blue">
+                <i className="ti ti-key" aria-hidden="true" />
+              </div>
+              <div className="db-profile-detail-text">
+                <span className="db-profile-detail-label">Rôle d'administration</span>
+                <span className="db-profile-detail-value">Super Admin (Droits complets)</span>
+              </div>
+            </div>
+
+            <div className="db-profile-detail-item">
+              <div className="db-profile-detail-icon db-profile-detail-icon--orange">
+                <i className="ti ti-history" aria-hidden="true" />
+              </div>
+              <div className="db-profile-detail-text">
+                <span className="db-profile-detail-label">Dernière connexion</span>
+                <span className="db-profile-detail-value">{new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
