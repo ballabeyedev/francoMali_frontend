@@ -475,7 +475,7 @@ function ListeUtilisateurs() {
     );
   });
 
-  const isActif = (u) => u.actif ?? u.isActive ?? u.active ?? true;
+  const isActif = (u) => u.statut === "actif";
 
   return (
     <div className="db-table-card">

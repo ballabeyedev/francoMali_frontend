@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 console.log('API_BASE_URL:', API_BASE_URL);
 
 const api = axios.create({
@@ -10,7 +11,7 @@ const api = axios.create({
 
 /* ========================= AUTH STORAGE ========================= */
 
-// Sauvegarder auth (token + user + expiration)
+// Sauvegarder auth
 export const setAuth = (token, user) => {
   const data = {
     token,
@@ -23,16 +24,23 @@ export const setAuth = (token, user) => {
 
 // Récupérer auth
 export const getAuth = () => {
-  const data = JSON.parse(localStorage.getItem('auth'));
+  try {
+    const data = JSON.parse(localStorage.getItem('auth'));
 
-  if (!data) return null;
+    if (!data) return null;
 
-  if (Date.now() > data.expiresAt) {
+    // expiration locale
+    if (Date.now() > data.expiresAt) {
+      clearAuth();
+      return null;
+    }
+
+    return data;
+
+  } catch {
     clearAuth();
     return null;
   }
-
-  return data;
 };
 
 // Supprimer auth
@@ -40,16 +48,18 @@ export const clearAuth = () => {
   localStorage.removeItem('auth');
 };
 
-// Vérifier si connecté
+// Vérifier connecté
 export const isAuthenticated = () => {
   return !!getAuth();
 };
 
-/* ========================= INTERCEPTOR REQUEST ========================= */
+/* ========================= REQUEST INTERCEPTOR ========================= */
 
 api.interceptors.request.use((config) => {
+
   const auth = getAuth();
-  console.log("TOKEN UTILISÉ:", auth?.token); // 🔥 Vérifie ici
+
+  console.log("TOKEN UTILISÉ:", auth?.token);
 
   if (auth?.token) {
     config.headers.Authorization = `Bearer ${auth.token}`;
@@ -58,16 +68,25 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-/* ========================= INTERCEPTOR RESPONSE ========================= */
+/* ========================= RESPONSE INTERCEPTOR ========================= */
 
 api.interceptors.response.use(
   (response) => response,
+
   (error) => {
+
     if (error.response) {
-      // Token expiré
-      if (error.response.status === 401) {
+
+      const status = error.response.status;
+
+      // Token expiré ou accès refusé
+      if (status === 401 || status === 403) {
+
+        console.log("⛔ Session expirée ou accès refusé");
+
         clearAuth();
-        window.location.href = "/";
+
+        window.location.href = "/francomaliship/auth/login";
       }
     }
 
