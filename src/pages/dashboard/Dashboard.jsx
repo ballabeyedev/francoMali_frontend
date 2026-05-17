@@ -12,6 +12,10 @@ import {
   getNombreColis,
   modifierPassword,
   modifierInfo,
+  getAdmins,
+  ajouterAdmin,
+  activerAdmin,
+  desactiverAdmin,
 } from "../../services/admin.service";
 import { setAuth, getAuth } from "../../services/api";
 import "../../assets/css/Dashboard.css";
@@ -32,6 +36,7 @@ const NAV_ITEMS = [
   { key: "accueil", label: "Accueil", icon: "ti-home" },
   { key: "colis", label: "Colis", icon: "ti-package" },
   { key: "utilisateurs", label: "Utilisateurs", icon: "ti-users" },
+  { key: "admins", label: "Admins", icon: "ti-shield" },
   { key: "profil", label: "Profil", icon: "ti-user" },
 ];
 
@@ -39,6 +44,7 @@ const PAGE_TITLES = {
   accueil: "Tableau de bord",
   colis: "Gestion des colis",
   utilisateurs: "Gestion des utilisateurs",
+  admins: "Gestion des Administrateurs",
   profil: "Mon Profil",
 };
 
@@ -106,6 +112,7 @@ export default function Dashboard() {
       case "accueil": return <Accueil />;
       case "colis": return <ListeColis />;
       case "utilisateurs": return <ListeUtilisateurs />;
+      case "admins": return <ListeAdmins />;
       case "profil": return <Profil user={currentUser} onUpdateUser={handleUpdateUser} />;
       default: return <Accueil />;
     }
@@ -700,6 +707,446 @@ function ListeUtilisateurs() {
             </table>
           </div>
         </>
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════
+   LISTE ADMINS
+   ══════════════════════════════════════ */
+function ListeAdmins() {
+  const [admins, setAdmins] = useState([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [togglingId, setTogglingId] = useState(null);
+
+  // États pour l'Ajout d'Admin
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addForm, setAddForm] = useState({
+    nom: "",
+    prenom: "",
+    email: "",
+    mot_de_passe: "",
+    telephone: "",
+    adresse: "",
+  });
+  const [addSubmitting, setAddSubmitting] = useState(false);
+  const [addError, setAddError] = useState(null);
+
+  const fetchAdmins = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getAdmins();
+      setAdmins(data?.data || []);
+    } catch {
+      setError("Impossible de charger la liste des administrateurs.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchAdmins(); }, [fetchAdmins]);
+
+  const openAddModal = () => {
+    setAddForm({
+      nom: "",
+      prenom: "",
+      email: "",
+      mot_de_passe: "",
+      telephone: "",
+      adresse: "",
+    });
+    setAddError(null);
+    setShowAddModal(true);
+  };
+
+  const handleAddSubmit = async (e) => {
+    e.preventDefault();
+    setAddError(null);
+    setAddSubmitting(true);
+    try {
+      await ajouterAdmin(addForm);
+      Swal.fire({
+        title: "Admin créé !",
+        text: "Le nouvel administrateur a été ajouté avec succès.",
+        icon: "success",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+      setShowAddModal(false);
+      await fetchAdmins();
+    } catch (err) {
+      const errMsg = err.response?.data?.message || err.response?.data?.error || err.message || "Une erreur est survenue lors de l'ajout.";
+      setAddError(errMsg);
+    } finally {
+      setAddSubmitting(false);
+    }
+  };
+
+  const handleToggleActif = async (admin) => {
+    const id = admin._id || admin.id;
+    const active = isActif(admin);
+    const actionText = active ? "désactiver" : "activer";
+
+    const result = await Swal.fire({
+      title: active ? "Désactiver l'admin ?" : "Activer l'admin ?",
+      text: `Êtes-vous sûr de vouloir ${actionText} l'administrateur ${admin.prenom || ""} ${admin.nom || ""} ?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: active ? "#d33" : "#3085d6",
+      cancelButtonColor: "#aaa",
+      confirmButtonText: active ? "Oui, désactiver" : "Oui, activer",
+      cancelButtonText: "Annuler",
+    });
+
+    if (!result.isConfirmed) {
+      return;
+    }
+
+    setTogglingId(id);
+    try {
+      if (active) {
+        await desactiverAdmin(id);
+        Swal.fire({
+          title: "Désactivé !",
+          text: "L'administrateur a été désactivé avec succès.",
+          icon: "success",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      } else {
+        await activerAdmin(id);
+        Swal.fire({
+          title: "Activé !",
+          text: "L'administrateur a été activé avec succès.",
+          icon: "success",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+      }
+      await fetchAdmins();
+    } catch {
+      Swal.fire({
+        title: "Erreur !",
+        text: `Une erreur est survenue lors de l'activation/désactivation.`,
+        icon: "error",
+      });
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const filtered = admins.filter((a) => {
+    const q = search.toLowerCase();
+    const fullName = `${a.prenom || ""} ${a.nom || ""}`.toLowerCase();
+    return (
+      fullName.includes(q) ||
+      a.email?.toLowerCase().includes(q) ||
+      a.telephone?.includes(q)
+    );
+  });
+
+  const isActif = (a) => {
+    return (
+      a.statut === "actif" ||
+      a.actif === true ||
+      a.isActive === true
+    );
+  };
+
+  return (
+    <div className="db-table-card">
+      <div className="db-table-header">
+        <span className="db-table-title">Tous les administrateurs</span>
+        <div className="db-table-actions">
+          <div className="db-search-wrap">
+            <i className="ti ti-search" aria-hidden="true" />
+            <input
+              type="text"
+              placeholder="Rechercher…"
+              className="db-search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            {search && (
+              <button className="db-search-clear" onClick={() => setSearch("")} aria-label="Effacer">
+                <i className="ti ti-x" aria-hidden="true" />
+              </button>
+            )}
+          </div>
+          <button className="db-btn-secondary" onClick={fetchAdmins} aria-label="Rafraîchir">
+            <i className="ti ti-refresh" aria-hidden="true" />
+          </button>
+          <button className="db-profile-action-btn db-profile-action-btn--primary" onClick={openAddModal} style={{ height: "38px", padding: "0 14px", borderRadius: "10px" }}>
+            <i className="ti ti-plus" aria-hidden="true" />
+            <span>Ajouter Admin</span>
+          </button>
+        </div>
+      </div>
+
+      {loading && <Spinner />}
+      {!loading && error && <ErrorBanner message={error} onRetry={fetchAdmins} />}
+      {!loading && !error && filtered.length === 0 && (
+        <div className="db-empty">
+          <i className="ti ti-users-off" aria-hidden="true" />
+          <span>{search ? "Aucun résultat" : "Aucun administrateur trouvé"}</span>
+        </div>
+      )}
+
+      {!loading && !error && filtered.length > 0 && (
+        <>
+          {/* ── Vue cartes MOBILE ── */}
+          <div className="db-user-cards">
+            {filtered.map((a, i) => {
+              const id = a._id || a.id;
+              const actif = isActif(a);
+              const isToggling = togglingId === id;
+              return (
+                <div key={id || i} className="db-user-card">
+                  <div className="db-user-card-header">
+                    <div className="db-user-cell">
+                      <div className="db-user-avatar db-user-avatar--sm">
+                        {getInitials(`${a.prenom || ""} ${a.nom || ""}`)}
+                      </div>
+                      <div>
+                        <div className="db-td-primary">{a.prenom} {a.nom}</div>
+                        <div className="db-td-secondary">{a.role || "Admin"}</div>
+                      </div>
+                    </div>
+                    <span className={actif ? "badge badge--success" : "badge badge--danger"}>
+                      <i className={`ti ${actif ? "ti-circle-check" : "ti-circle-x"}`} aria-hidden="true" />
+                      {actif ? "Actif" : "Inactif"}
+                    </span>
+                  </div>
+
+                  <div className="db-user-card-body">
+                    {a.email && (
+                      <div className="db-user-card-row">
+                        <i className="ti ti-mail" aria-hidden="true" />
+                        <span>{a.email}</span>
+                      </div>
+                    )}
+                    {a.telephone && (
+                      <div className="db-user-card-row">
+                        <i className="ti ti-phone" aria-hidden="true" />
+                        <span>{a.telephone}</span>
+                      </div>
+                    )}
+                    {a.adresse && (
+                      <div className="db-user-card-row">
+                        <i className="ti ti-map-pin" aria-hidden="true" />
+                        <span>{a.adresse}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="db-user-card-actions">
+                    <button
+                      className={`db-action-btn ${actif ? "db-action-btn--warning" : "db-action-btn--success"}`}
+                      onClick={() => handleToggleActif(a)}
+                      disabled={isToggling}
+                      aria-label={actif ? "Désactiver" : "Activer"}
+                    >
+                      {isToggling ? (
+                        <span className="db-spinner db-spinner--sm" />
+                      ) : (
+                        <>
+                          <i className={`ti ${actif ? "ti-user-off" : "ti-user-check"}`} aria-hidden="true" />
+                          <span className="db-action-btn-label">{actif ? "Désactiver" : "Activer"}</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* ── Vue tableau DESKTOP ── */}
+          <div className="db-table-wrap db-table-desktop">
+            <table className="db-table">
+              <thead>
+                <tr>
+                  <th>Administrateur</th>
+                  <th>Adresse</th>
+                  <th>Téléphone</th>
+                  <th>Email</th>
+                  <th>Statut</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((a, i) => {
+                  const id = a._id || a.id;
+                  const actif = isActif(a);
+                  const isToggling = togglingId === id;
+                  return (
+                    <tr key={id || i}>
+                      <td>
+                        <div className="db-user-cell">
+                          <div className="db-user-avatar db-user-avatar--sm">
+                            {getInitials(`${a.prenom || ""} ${a.nom || ""}`)}
+                          </div>
+                          <div>
+                            <div className="db-td-primary">{a.prenom} {a.nom}</div>
+                            <div className="db-td-secondary">{a.role || "Admin"}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>{a.adresse || "—"}</td>
+                      <td>{a.telephone || "—"}</td>
+                      <td>{a.email || "—"}</td>
+                      <td>
+                        <span className={actif ? "badge badge--success" : "badge badge--danger"}>
+                          <i className={`ti ${actif ? "ti-circle-check" : "ti-circle-x"}`} aria-hidden="true" />
+                          {actif ? "Actif" : "Inactif"}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="db-row-actions">
+                          <button
+                            className={`db-action-btn ${actif ? "db-action-btn--warning" : "db-action-btn--success"}`}
+                            onClick={() => handleToggleActif(a)}
+                            disabled={isToggling}
+                            aria-label={actif ? "Désactiver" : "Activer"}
+                            title={actif ? "Désactiver cet admin" : "Activer cet admin"}
+                          >
+                            {isToggling ? (
+                              <span className="db-spinner db-spinner--sm" />
+                            ) : (
+                              <>
+                                <i className={`ti ${actif ? "ti-user-off" : "ti-user-check"}`} aria-hidden="true" />
+                                <span className="db-action-btn-label">{actif ? "Désactiver" : "Activer"}</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {/* ── MODAL AJOUT ADMIN ── */}
+      {showAddModal && (
+        <div className="db-modal-overlay">
+          <div className="db-modal-container">
+            <div className="db-modal-header">
+              <span className="db-modal-title">Ajouter un nouvel Administrateur</span>
+              <button className="db-modal-close-btn" onClick={() => setShowAddModal(false)} aria-label="Fermer">
+                <i className="ti ti-x" aria-hidden="true" />
+              </button>
+            </div>
+            <form onSubmit={handleAddSubmit} className="db-modal-form">
+              <div className="db-form-row">
+                <div className="db-form-group">
+                  <label htmlFor="admin-prenom">Prénom</label>
+                  <input
+                    id="admin-prenom"
+                    type="text"
+                    required
+                    value={addForm.prenom}
+                    onChange={(e) => setAddForm({ ...addForm, prenom: e.target.value })}
+                    placeholder="Entrez le prénom"
+                  />
+                </div>
+                <div className="db-form-group">
+                  <label htmlFor="admin-nom">Nom</label>
+                  <input
+                    id="admin-nom"
+                    type="text"
+                    required
+                    value={addForm.nom}
+                    onChange={(e) => setAddForm({ ...addForm, nom: e.target.value })}
+                    placeholder="Entrez le nom"
+                  />
+                </div>
+              </div>
+
+              <div className="db-form-group">
+                <label htmlFor="admin-email">Adresse Email</label>
+                <input
+                  id="admin-email"
+                  type="email"
+                  required
+                  value={addForm.email}
+                  onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
+                  placeholder="exemple@gmail.com"
+                />
+              </div>
+
+              <div className="db-form-group">
+                <label htmlFor="admin-mot-de-passe">Mot de passe</label>
+                <input
+                  id="admin-mot-de-passe"
+                  type="password"
+                  required
+                  value={addForm.mot_de_passe}
+                  onChange={(e) => setAddForm({ ...addForm, mot_de_passe: e.target.value })}
+                  placeholder="Au moins 8 caractères"
+                />
+              </div>
+
+              <div className="db-form-row">
+                <div className="db-form-group">
+                  <label htmlFor="admin-telephone">Téléphone</label>
+                  <input
+                    id="admin-telephone"
+                    type="tel"
+                    value={addForm.telephone}
+                    onChange={(e) => setAddForm({ ...addForm, telephone: e.target.value })}
+                    placeholder="+22177..."
+                  />
+                </div>
+                <div className="db-form-group">
+                  <label htmlFor="admin-adresse">Adresse</label>
+                  <input
+                    id="admin-adresse"
+                    type="text"
+                    value={addForm.adresse}
+                    onChange={(e) => setAddForm({ ...addForm, adresse: e.target.value })}
+                    placeholder="Dakar, Sénégal"
+                  />
+                </div>
+              </div>
+
+              {addError && (
+                <div className="db-modal-error-banner" role="alert">
+                  <i className="ti ti-alert-circle" aria-hidden="true" />
+                  <span>{addError}</span>
+                </div>
+              )}
+
+              <div className="db-modal-footer">
+                <button
+                  type="button"
+                  className="db-modal-btn db-modal-btn--secondary"
+                  onClick={() => setShowAddModal(false)}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="db-modal-btn db-modal-btn--primary"
+                  disabled={addSubmitting}
+                >
+                  {addSubmitting ? (
+                    <span className="db-spinner db-spinner--sm" />
+                  ) : (
+                    "Créer l'administrateur"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

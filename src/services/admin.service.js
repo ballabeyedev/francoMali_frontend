@@ -212,3 +212,57 @@ export const resetPassword = async (token, password) => {
     throw error;
   }
 };
+
+/* ========================= GESTION DES ADMINS ========================= */
+
+export const getAdmins = async () => {
+  const name = "Liste des administrateurs";
+  try {
+    logRequest(name);
+    const res = await api.get("/admin/liste-admins");
+    logResponse(name, res);
+    return res.data;
+  } catch (error) {
+    logError(name, error);
+    throw error;
+  }
+};
+
+export const ajouterAdmin = async (data) => {
+  const name = "Ajouter un administrateur";
+  try {
+    logRequest(name, { ...data, mot_de_passe: "***" });
+    const res = await api.post("/admin/ajouter-admin", data);
+    logResponse(name, res);
+    return res.data;
+  } catch (error) {
+    logError(name, error);
+    throw error;
+  }
+};
+
+export const activerAdmin = async (id) => {
+  const name = "Activer un administrateur";
+  try {
+    logRequest(name, { id });
+    const res = await api.put(`/admin/activer-admin/${id}`);
+    logResponse(name, res);
+    return res.data;
+  } catch (error) {
+    logError(name, error);
+    throw error;
+  }
+};
+
+export const desactiverAdmin = async (id) => {
+  const name = "Désactiver un administrateur";
+  try {
+    logRequest(name, { id });
+    const res = await api.put(`/admin/desactiver-admin/${id}`);
+    logResponse(name, res);
+    return res.data;
+  } catch (error) {
+    logError(name, error);
+    throw error;
+  }
+};
