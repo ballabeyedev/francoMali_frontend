@@ -141,3 +141,37 @@ export const getStatistiquesColis = async () => {
     throw error;
   }
 };
+
+/* ========================= MODIFIER PROFIL ADMIN ========================= */
+
+export const modifierPassword = async (oldPassword, newPassword) => {
+  const name = "Modifier mot de passe admin";
+  try {
+    logRequest(name, { oldPassword: "***", newPassword: "***" });
+
+    // Appel à l'API backend
+    const res = await api.put("/admin/modifier-password", { oldPassword, newPassword });
+
+    logResponse(name, res);
+    return res.data;
+  } catch (error) {
+    logError(name, error);
+    throw error;
+  }
+};
+
+export const modifierInfo = async (data) => {
+  const name = "Modifier informations admin";
+  try {
+    logRequest(name, data);
+
+    // Appel à l'API backend
+    const res = await api.put("/admin/modifier-info", data);
+
+    logResponse(name, res);
+    return res.data;
+  } catch (error) {
+    logError(name, error);
+    throw error;
+  }
+};

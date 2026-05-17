@@ -10,7 +10,10 @@ import {
   getColisEnvoyes,
   getColisAttente,
   getNombreColis,
+  modifierPassword,
+  modifierInfo,
 } from "../../services/admin.service";
+import { setAuth, getAuth } from "../../services/api";
 import "../../assets/css/Dashboard.css";
 
 /* ── Helpers ── */
@@ -72,7 +75,11 @@ export default function Dashboard() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const user = getUser() || { nom: "Admin", email: "admin@francomaliship.com" };
+  const [currentUser, setCurrentUser] = useState(() => getUser() || { nom: "Admin", email: "admin@francomaliship.com" });
+
+  const handleUpdateUser = (updatedUser) => {
+    setCurrentUser(updatedUser);
+  };
 
   const handleLogout = async () => {
     const result = await Swal.fire({
@@ -99,7 +106,7 @@ export default function Dashboard() {
       case "accueil": return <Accueil />;
       case "colis": return <ListeColis />;
       case "utilisateurs": return <ListeUtilisateurs />;
-      case "profil": return <Profil user={user} />;
+      case "profil": return <Profil user={currentUser} onUpdateUser={handleUpdateUser} />;
       default: return <Accueil />;
     }
   };
@@ -154,11 +161,11 @@ export default function Dashboard() {
         </button>
 
         <div className="db-sidebar-footer">
-          <div className="db-user-avatar">{getInitials(user.nom)}</div>
+          <div className="db-user-avatar">{getInitials(currentUser.nom)}</div>
           {!sidebarCollapsed && (
             <div className="db-user-info">
-              <span className="db-user-name">{user.nom} {user.prenom}</span>
-              <span className="db-user-email">{user.email}</span>
+              <span className="db-user-name">{currentUser.nom} {currentUser.prenom}</span>
+              <span className="db-user-email">{currentUser.email}</span>
             </div>
           )}
         </div>
@@ -701,27 +708,153 @@ function ListeUtilisateurs() {
 /* ══════════════════════════════════════
    MON PROFIL (VUE ADMIN)
    ══════════════════════════════════════ */
-function Profil({ user }) {
+function Profil({ user, onUpdateUser }) {
   const initials = getInitials(user.nom || "Admin");
   const fullNom = `${user.prenom || ""} ${user.nom || "Admin"}`;
 
+  // États pour les Modals
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+
+  // Formulaires & États d'envoi
+  const [infoForm, setInfoForm] = useState({
+    prenom: user.prenom || "",
+    nom: user.nom || "",
+    email: user.email || "",
+    telephone: user.telephone || "",
+    adresse: user.adresse || "",
+  });
+  const [infoSubmitting, setInfoSubmitting] = useState(false);
+  const [infoError, setInfoError] = useState(null);
+
+  const [passwordForm, setPasswordForm] = useState({
+    oldPassword: "",
+    newPassword: "",
+  });
+  const [passwordSubmitting, setPasswordSubmitting] = useState(false);
+  const [passwordError, setPasswordError] = useState(null);
+
+  // Réinitialiser les formulaires à l'ouverture
+  const openInfoModal = () => {
+    setInfoForm({
+      prenom: user.prenom || "",
+      nom: user.nom || "",
+      email: user.email || "",
+      telephone: user.telephone || "",
+      adresse: user.adresse || "",
+    });
+    setInfoError(null);
+    setShowInfoModal(true);
+  };
+
+  const openPasswordModal = () => {
+    setPasswordForm({ oldPassword: "", newPassword: "" });
+    setPasswordError(null);
+    setShowPasswordModal(true);
+  };
+
+  // Soumission de la modification des informations personnelles
+  const handleInfoSubmit = async (e) => {
+    e.preventDefault();
+    setInfoError(null);
+    setInfoSubmitting(true);
+    try {
+      const responseData = await modifierInfo(infoForm);
+
+      // On capture l'utilisateur renvoyé par l'API
+      const updatedUser = responseData.data || responseData.user || responseData;
+
+      // On met à jour le localStorage pour garder la session synchronisée
+      const auth = getAuth();
+      if (auth?.token) {
+        setAuth(auth.token, updatedUser);
+      }
+
+      // On notifie le composant principal (Dashboard) pour mettre à jour l'état réactif
+      if (onUpdateUser) {
+        onUpdateUser(updatedUser);
+      }
+
+      Swal.fire({
+        title: "Mis à jour !",
+        text: "Vos informations personnelles ont été modifiées avec succès.",
+        icon: "success",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+
+      setShowInfoModal(false);
+    } catch (error) {
+      // Capturer le message précis renvoyé par le backend
+      const errMsg = error.response?.data?.message || error.response?.data?.error || error.message || "Une erreur est survenue lors de la mise à jour.";
+      setInfoError(errMsg);
+    } finally {
+      setInfoSubmitting(false);
+    }
+  };
+
+  // Soumission de la modification du mot de passe
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    setPasswordError(null);
+    setPasswordSubmitting(true);
+    try {
+      await modifierPassword(passwordForm.oldPassword, passwordForm.newPassword);
+
+      Swal.fire({
+        title: "Succès !",
+        text: "Votre mot de passe a été modifié avec succès.",
+        icon: "success",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+
+      setShowPasswordModal(false);
+      setPasswordForm({ oldPassword: "", newPassword: "" });
+    } catch (error) {
+      // Capturer le message précis renvoyé par le backend
+      const errMsg = error.response?.data?.message || error.response?.data?.error || error.message || "Une erreur est survenue.";
+      setPasswordError(errMsg);
+    } finally {
+      setPasswordSubmitting(false);
+    }
+  };
+
   return (
     <div className="db-profile-container">
-      {/* Hero Banner Section */}
-      <div className="db-profile-hero">
-        <div className="db-profile-hero-gradient" />
-        <div className="db-profile-hero-content">
-          <div className="db-profile-avatar-large">
-            {initials}
-            <span className="db-profile-avatar-status" />
-          </div>
-          <div className="db-profile-hero-info">
-            <h2 className="db-profile-name">{fullNom}</h2>
-            <div className="db-profile-role-badge">
-              <i className="ti ti-shield" aria-hidden="true" />
-              <span>{user.role || "Administrateur"}</span>
+      {/* Modernized Hero Card Section */}
+      <div className="db-profile-modern-hero">
+        <div className="db-profile-hero-left">
+          <div className="db-profile-avatar-wrapper">
+            <div className="db-profile-avatar-new">{initials}</div>
+            <div className="db-profile-status-ring">
+              <span className="db-profile-status-dot" />
             </div>
           </div>
+          <div className="db-profile-hero-meta">
+            <h2 className="db-profile-hero-fullname">{fullNom}</h2>
+            <div className="db-profile-badges-row">
+              <span className="db-profile-pill db-profile-pill--primary">
+                <i className="ti ti-shield" aria-hidden="true" />
+                {user.role || "Administrateur"}
+              </span>
+              <span className="db-profile-pill db-profile-pill--success">
+                <span className="db-indicator-dot" />
+                En ligne
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="db-profile-hero-actions">
+          <button className="db-profile-action-btn" onClick={openInfoModal}>
+            <i className="ti ti-edit" aria-hidden="true" />
+            Modifier mes informations
+          </button>
+          <button className="db-profile-action-btn db-profile-action-btn--primary" onClick={openPasswordModal}>
+            <i className="ti ti-key" aria-hidden="true" />
+            Changer le mot de passe
+          </button>
         </div>
       </div>
 
@@ -805,6 +938,154 @@ function Profil({ user }) {
           </div>
         </div>
       </div>
+
+      {/* Integrated React Modal - MODIFIER LES INFORMATIONS */}
+      {showInfoModal && (
+        <div className="db-modal-overlay" onClick={() => setShowInfoModal(false)}>
+          <div className="db-modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="db-modal-header">
+              <h3 className="db-modal-title">Modifier mes informations</h3>
+              <button className="db-modal-close-btn" onClick={() => setShowInfoModal(false)}>
+                <i className="ti ti-x" aria-hidden="true" />
+              </button>
+            </div>
+
+            <form onSubmit={handleInfoSubmit} className="db-modal-form">
+              {infoError && (
+                <div className="db-modal-error-banner">
+                  <i className="ti ti-alert-triangle" aria-hidden="true" />
+                  <span>{infoError}</span>
+                </div>
+              )}
+
+              <div className="db-form-row">
+                <div className="db-form-group">
+                  <label>Prénom</label>
+                  <input
+                    type="text"
+                    value={infoForm.prenom}
+                    onChange={(e) => setInfoForm({ ...infoForm, prenom: e.target.value })}
+                    required
+                    placeholder="Votre prénom"
+                  />
+                </div>
+                <div className="db-form-group">
+                  <label>Nom</label>
+                  <input
+                    type="text"
+                    value={infoForm.nom}
+                    onChange={(e) => setInfoForm({ ...infoForm, nom: e.target.value })}
+                    required
+                    placeholder="Votre nom"
+                  />
+                </div>
+              </div>
+
+              <div className="db-form-group">
+                <label>Adresse email</label>
+                <input
+                  type="email"
+                  value={infoForm.email}
+                  onChange={(e) => setInfoForm({ ...infoForm, email: e.target.value })}
+                  required
+                  placeholder="exemple@domaine.com"
+                />
+              </div>
+
+              <div className="db-form-group">
+                <label>Numéro de téléphone</label>
+                <input
+                  type="text"
+                  value={infoForm.telephone}
+                  onChange={(e) => setInfoForm({ ...infoForm, telephone: e.target.value })}
+                  placeholder="+221 77 000 00 00"
+                />
+              </div>
+
+              <div className="db-form-group">
+                <label>Adresse physique</label>
+                <input
+                  type="text"
+                  value={infoForm.adresse}
+                  onChange={(e) => setInfoForm({ ...infoForm, adresse: e.target.value })}
+                  placeholder="Dakar, Sénégal"
+                />
+              </div>
+
+              <div className="db-modal-footer">
+                <button type="button" className="db-modal-btn db-modal-btn--secondary" onClick={() => setShowInfoModal(false)}>
+                  Annuler
+                </button>
+                <button type="submit" className="db-modal-btn db-modal-btn--primary" disabled={infoSubmitting}>
+                  {infoSubmitting ? (
+                    <span className="db-spinner db-spinner--sm" />
+                  ) : (
+                    "Enregistrer les modifications"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Integrated React Modal - MODIFIER LE MOT DE PASSE */}
+      {showPasswordModal && (
+        <div className="db-modal-overlay" onClick={() => setShowPasswordModal(false)}>
+          <div className="db-modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="db-modal-header">
+              <h3 className="db-modal-title">Modifier mon mot de passe</h3>
+              <button className="db-modal-close-btn" onClick={() => setShowPasswordModal(false)}>
+                <i className="ti ti-x" aria-hidden="true" />
+              </button>
+            </div>
+
+            <form onSubmit={handlePasswordSubmit} className="db-modal-form">
+              {passwordError && (
+                <div className="db-modal-error-banner">
+                  <i className="ti ti-alert-triangle" aria-hidden="true" />
+                  <span>{passwordError}</span>
+                </div>
+              )}
+
+              <div className="db-form-group">
+                <label>Ancien mot de passe</label>
+                <input
+                  type="password"
+                  placeholder="Saisissez votre mot de passe actuel"
+                  value={passwordForm.oldPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, oldPassword: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="db-form-group">
+                <label>Nouveau mot de passe</label>
+                <input
+                  type="password"
+                  placeholder="Minimum 8 caractères conseillés"
+                  value={passwordForm.newPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="db-modal-footer">
+                <button type="button" className="db-modal-btn db-modal-btn--secondary" onClick={() => setShowPasswordModal(false)}>
+                  Annuler
+                </button>
+                <button type="submit" className="db-modal-btn db-modal-btn--primary" disabled={passwordSubmitting}>
+                  {passwordSubmitting ? (
+                    <span className="db-spinner db-spinner--sm" />
+                  ) : (
+                    "Mettre à jour le mot de passe"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
