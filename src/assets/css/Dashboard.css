@@ -1727,9 +1727,9 @@ body {
     width: 38px;
     height: 38px;
     border-radius: 10px;
-    border: 1px solid var(--gray-200);
-    background-color: var(--white);
-    color: var(--gray-700);
+    border: 1px solid var(--orange-border);
+    background-color: var(--orange-light);
+    color: var(--orange);
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     outline: none;
@@ -1738,11 +1738,11 @@ body {
 }
 
 .db-btn-secondary:hover {
-    background-color: var(--gray-50);
-    border-color: var(--gray-400);
-    color: var(--orange);
+    background-color: var(--orange);
+    border-color: var(--orange-dark);
+    color: var(--white);
     transform: translateY(-1px);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    box-shadow: 0 4px 10px rgba(249, 115, 22, 0.2);
 }
 
 .db-btn-secondary:active {
