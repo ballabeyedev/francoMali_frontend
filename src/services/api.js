@@ -79,10 +79,10 @@ api.interceptors.response.use(
 
       const status = error.response.status;
 
-      // Token expiré ou accès refusé
-      if (status === 401 || status === 403) {
+      // Token expiré, accès refusé, ou erreur serveur critique (500)
+      if (status === 401 || status === 403 || status === 500) {
 
-        console.log("⛔ Session expirée ou accès refusé");
+        console.log(`⛔ Session expirée ou erreur ${status}. Déconnexion et redirection...`);
 
         clearAuth();
 
