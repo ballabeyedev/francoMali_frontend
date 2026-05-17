@@ -239,7 +239,14 @@ export default function Dashboard() {
    ACCUEIL
 ══════════════════════════════════════ */
 function Accueil() {
-  const [stats, setStats] = useState({ colis: null, utilisateurs: null, admins: null });
+  const [stats, setStats] = useState({
+    colis: null,
+    enAttente: null,
+    recupere: null,
+    livre: null,
+    utilisateurs: null,
+    admins: null
+  });
   const [colisAttente, setColisAttente] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -248,14 +255,32 @@ function Accueil() {
     setLoading(true);
     setError(null);
     try {
-      const [nbColis, nbUtilisateurs, nbAdmins, attente] = await Promise.all([
+      const [
+        nbColis,
+        nbAttente,
+        nbRecupere,
+        nbLivre,
+        nbUtilisateurs,
+        nbAdmins,
+        attenteList
+      ] = await Promise.all([
         getNombreColis(),
+        getNombreColisEnAttente(),
+        getNombreColisRecuperes(),
+        getNombreColisLivres(),
         getNombreUtilisateurs(),
         getNombreAdmins(),
         getColisEnAttente(),
       ]);
-      setStats({ colis: nbColis, utilisateurs: nbUtilisateurs, admins: nbAdmins });
-      setColisAttente(attente?.colis || attente || []);
+      setStats({
+        colis: nbColis,
+        enAttente: nbAttente,
+        recupere: nbRecupere,
+        livre: nbLivre,
+        utilisateurs: nbUtilisateurs,
+        admins: nbAdmins
+      });
+      setColisAttente(attenteList?.colis || attenteList || []);
     } catch {
       setError("Impossible de charger les données du tableau de bord.");
     } finally {
@@ -276,10 +301,22 @@ function Accueil() {
       icon: "ti-package",
     },
     {
-      label: "En attente",
-      value: colisAttente.length ?? "—",
+      label: "Colis en attente",
+      value: stats.enAttente?.nombre_colis ?? "—",
       subType: "warning",
       icon: "ti-clock",
+    },
+    {
+      label: "Colis récupérés",
+      value: stats.recupere?.nombre_colis ?? "—",
+      subType: "info",
+      icon: "ti-truck",
+    },
+    {
+      label: "Colis livrés",
+      value: stats.livre?.nombre_colis ?? "—",
+      subType: "success",
+      icon: "ti-circle-check",
     },
     {
       label: "Utilisateurs",
@@ -297,7 +334,7 @@ function Accueil() {
 
   return (
     <>
-      <div className="db-stats-grid">
+      <div className="db-stats-grid db-stats-grid--6">
         {statCards.map((s) => (
           <div className="db-stat-card" key={s.label}>
             <div className="db-stat-top">
@@ -435,7 +472,7 @@ function ListeColis() {
               </button>
             )}
           </div>
-          <button className="db-btn-secondary" onClick={fetchColis} aria-label="Rafraîchir">
+          <button className="db-btn-refresh" onClick={fetchColis} aria-label="Rafraîchir">
             <i className="ti ti-refresh" aria-hidden="true" />
           </button>
         </div>
@@ -797,7 +834,7 @@ function ListeUtilisateurs() {
               </button>
             )}
           </div>
-          <button className="db-btn-secondary" onClick={fetchUtilisateurs} aria-label="Rafraîchir">
+          <button className="db-btn-refresh" onClick={fetchUtilisateurs} aria-label="Rafraîchir">
             <i className="ti ti-refresh" aria-hidden="true" />
           </button>
         </div>
@@ -1134,7 +1171,7 @@ function ListeAdmins() {
               </button>
             )}
           </div>
-          <button className="db-btn-secondary" onClick={fetchAdmins} aria-label="Rafraîchir">
+          <button className="db-btn-refresh" onClick={fetchAdmins} aria-label="Rafraîchir">
             <i className="ti ti-refresh" aria-hidden="true" />
           </button>
           <button className="db-profile-action-btn db-profile-action-btn--primary" onClick={openAddModal} style={{ height: "38px", padding: "0 14px", borderRadius: "10px" }}>

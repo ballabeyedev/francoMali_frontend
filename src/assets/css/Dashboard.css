@@ -1820,3 +1820,38 @@ body {
     transform: translateY(0);
     filter: brightness(0.92);
 }
+
+/* ── Highly Visible Refresh Button ── */
+.db-btn-refresh {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    border: 2px solid var(--orange);
+    background-color: var(--white);
+    color: var(--orange);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 2px 6px rgba(249, 115, 22, 0.12);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    flex-shrink: 0;
+    outline: none;
+}
+
+.db-btn-refresh:hover {
+    background-color: var(--orange-light);
+    color: var(--orange);
+    transform: translateY(-1.5px);
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.22);
+}
+
+.db-btn-refresh:active {
+    transform: translateY(0);
+}
+
+.db-btn-refresh i {
+    color: inherit;
+    font-weight: 700;
+}
