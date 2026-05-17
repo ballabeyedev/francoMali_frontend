@@ -16,6 +16,9 @@ import {
   ajouterAdmin,
   activerAdmin,
   desactiverAdmin,
+  getNombreAdmins,
+  rechercherAdmin,
+  rechercherUtilisateur,
 } from "../../services/admin.service";
 import { setAuth, getAuth } from "../../services/api";
 import "../../assets/css/Dashboard.css";
@@ -227,7 +230,7 @@ export default function Dashboard() {
    ACCUEIL
 ══════════════════════════════════════ */
 function Accueil() {
-  const [stats, setStats] = useState({ colis: null, utilisateurs: null });
+  const [stats, setStats] = useState({ colis: null, utilisateurs: null, admins: null });
   const [colisAttente, setColisAttente] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -236,12 +239,13 @@ function Accueil() {
     setLoading(true);
     setError(null);
     try {
-      const [nbColis, nbUtilisateurs, attente] = await Promise.all([
+      const [nbColis, nbUtilisateurs, nbAdmins, attente] = await Promise.all([
         getNombreColis(),
         getNombreUtilisateurs(),
+        getNombreAdmins(),
         getColisAttente(),
       ]);
-      setStats({ colis: nbColis, utilisateurs: nbUtilisateurs });
+      setStats({ colis: nbColis, utilisateurs: nbUtilisateurs, admins: nbAdmins });
       setColisAttente(attente?.colis || attente || []);
     } catch {
       setError("Impossible de charger les données du tableau de bord.");
@@ -273,6 +277,12 @@ function Accueil() {
       value: stats.utilisateurs?.total ?? "—",
       subType: "success",
       icon: "ti-users",
+    },
+    {
+      label: "Administrateurs",
+      value: stats.admins?.data ?? "—",
+      subType: "info",
+      icon: "ti-shield",
     },
   ];
 
@@ -454,16 +464,40 @@ function ListeUtilisateurs() {
     setLoading(true);
     setError(null);
     try {
-      const data = await getUtilisateurs();
-      setUtilisateurs(data?.data || []);
+      let data;
+      if (search.trim()) {
+        const params = {};
+        const q = search.trim();
+        if (q.includes("@")) {
+          params.email = q;
+        } else {
+          const parts = q.split(/\s+/);
+          if (parts.length >= 2) {
+            params.prenom = parts[0];
+            params.nom = parts.slice(1).join(" ");
+          } else {
+            params.nom = q;
+          }
+        }
+        data = await rechercherUtilisateur(params);
+      } else {
+        data = await getUtilisateurs();
+      }
+      setUtilisateurs(data?.data || data || []);
     } catch {
       setError("Impossible de charger la liste des utilisateurs.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [search]);
 
-  useEffect(() => { fetchUtilisateurs(); }, [fetchUtilisateurs]);
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      fetchUtilisateurs();
+    }, 400);
+
+    return () => clearTimeout(delayDebounce);
+  }, [search, fetchUtilisateurs]);
 
   const handleToggleActif = async (user) => {
     const id = user._id || user.id;
@@ -518,15 +552,7 @@ function ListeUtilisateurs() {
     }
   };
 
-  const filtered = utilisateurs.filter((u) => {
-    const q = search.toLowerCase();
-    const fullName = `${u.prenom || ""} ${u.nom || ""}`.toLowerCase();
-    return (
-      fullName.includes(q) ||
-      u.email?.toLowerCase().includes(q) ||
-      u.telephone?.includes(q)
-    );
-  });
+  const filtered = utilisateurs;
 
   const isActif = (u) => {
     return (
@@ -739,16 +765,40 @@ function ListeAdmins() {
     setLoading(true);
     setError(null);
     try {
-      const data = await getAdmins();
-      setAdmins(data?.data || []);
+      let data;
+      if (search.trim()) {
+        const params = {};
+        const q = search.trim();
+        if (q.includes("@")) {
+          params.email = q;
+        } else {
+          const parts = q.split(/\s+/);
+          if (parts.length >= 2) {
+            params.prenom = parts[0];
+            params.nom = parts.slice(1).join(" ");
+          } else {
+            params.nom = q;
+          }
+        }
+        data = await rechercherAdmin(params);
+      } else {
+        data = await getAdmins();
+      }
+      setAdmins(data?.data || data || []);
     } catch {
       setError("Impossible de charger la liste des administrateurs.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [search]);
 
-  useEffect(() => { fetchAdmins(); }, [fetchAdmins]);
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      fetchAdmins();
+    }, 400);
+
+    return () => clearTimeout(delayDebounce);
+  }, [search, fetchAdmins]);
 
   const openAddModal = () => {
     setAddForm({
@@ -839,15 +889,7 @@ function ListeAdmins() {
     }
   };
 
-  const filtered = admins.filter((a) => {
-    const q = search.toLowerCase();
-    const fullName = `${a.prenom || ""} ${a.nom || ""}`.toLowerCase();
-    return (
-      fullName.includes(q) ||
-      a.email?.toLowerCase().includes(q) ||
-      a.telephone?.includes(q)
-    );
-  });
+  const filtered = admins;
 
   const isActif = (a) => {
     return (

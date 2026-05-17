@@ -266,3 +266,42 @@ export const desactiverAdmin = async (id) => {
     throw error;
   }
 };
+
+export const getNombreAdmins = async () => {
+  const name = "Nombre d'admins";
+  try {
+    logRequest(name);
+    const res = await api.get("/admin/nombre-admins");
+    logResponse(name, res);
+    return res.data;
+  } catch (error) {
+    logError(name, error);
+    throw error;
+  }
+};
+
+export const rechercherAdmin = async (params) => {
+  const name = "Rechercher admin";
+  try {
+    logRequest(name, params);
+    const res = await api.get("/admin/rechercher-admin", { params });
+    logResponse(name, res);
+    return res.data;
+  } catch (error) {
+    logError(name, error);
+    throw error;
+  }
+};
+
+export const rechercherUtilisateur = async (params) => {
+  const name = "Rechercher utilisateur";
+  try {
+    logRequest(name, params);
+    const res = await api.get("/admin/rechercher-utilisateur", { params });
+    logResponse(name, res);
+    return res.data;
+  } catch (error) {
+    logError(name, error);
+    throw error;
+  }
+};
