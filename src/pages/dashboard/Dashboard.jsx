@@ -450,16 +450,52 @@ function ListeUtilisateurs() {
 
   const handleToggleActif = async (user) => {
     const id = user._id || user.id;
+    const active = isActif(user);
+    const actionText = active ? "désactiver" : "activer";
+
+    const result = await Swal.fire({
+      title: active ? "Désactiver l'utilisateur ?" : "Activer l'utilisateur ?",
+      text: `Êtes-vous sûr de vouloir ${actionText} l'utilisateur ${user.prenom || ""} ${user.nom || ""} ?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: active ? "#d33" : "#3085d6",
+      cancelButtonColor: "#aaa",
+      confirmButtonText: active ? "Oui, désactiver" : "Oui, activer",
+      cancelButtonText: "Annuler",
+    });
+
+    if (!result.isConfirmed) {
+      return;
+    }
+
     setTogglingId(id);
     try {
-      if (isActif(user)) {
+      if (active) {
         await desactiverUtilisateur(id);
+        Swal.fire({
+          title: "Désactivé !",
+          text: "L'utilisateur a été désactivé avec succès.",
+          icon: "success",
+          timer: 2000,
+          showConfirmButton: false,
+        });
       } else {
         await activerUtilisateur(id);
+        Swal.fire({
+          title: "Activé !",
+          text: "L'utilisateur a été activé avec succès.",
+          icon: "success",
+          timer: 2000,
+          showConfirmButton: false,
+        });
       }
       await fetchUtilisateurs();
     } catch {
-      // Erreur silencieuse
+      Swal.fire({
+        title: "Erreur !",
+        text: `Une erreur est survenue lors de l'activation/désactivation.`,
+        icon: "error",
+      });
     } finally {
       setTogglingId(null);
     }
