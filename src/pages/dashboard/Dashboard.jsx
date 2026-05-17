@@ -475,7 +475,13 @@ function ListeUtilisateurs() {
     );
   });
 
-  const isActif = (u) => u.statut === "actif";
+  const isActif = (u) => {
+    return (
+      u.statut === "actif" ||
+      u.actif === true ||
+      u.isActive === true
+    );
+  };
 
   return (
     <div className="db-table-card">
