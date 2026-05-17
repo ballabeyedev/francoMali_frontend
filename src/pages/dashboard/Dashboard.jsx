@@ -7,9 +7,18 @@ import {
   activerUtilisateur,
   desactiverUtilisateur,
   getNombreUtilisateurs,
-  getColisEnvoyes,
-  getColisAttente,
+  getListeColis,
+  getColisEnAttente,
+  getColisLivres,
+  getColisRecuperes,
   getNombreColis,
+  getNombreColisEnAttente,
+  getNombreColisLivres,
+  getNombreColisRecuperes,
+  rechercherColis,
+  changerStatutEnAttente,
+  changerStatutLivre,
+  changerStatutRecupere,
   modifierPassword,
   modifierInfo,
   getAdmins,
@@ -243,7 +252,7 @@ function Accueil() {
         getNombreColis(),
         getNombreUtilisateurs(),
         getNombreAdmins(),
-        getColisAttente(),
+        getColisEnAttente(),
       ]);
       setStats({ colis: nbColis, utilisateurs: nbUtilisateurs, admins: nbAdmins });
       setColisAttente(attente?.colis || attente || []);
@@ -261,14 +270,14 @@ function Accueil() {
 
   const statCards = [
     {
-      label: "Colis envoyés",
-      value: stats.colis?.total ?? "—",
+      label: "Total Colis",
+      value: stats.colis?.nombre_colis ?? "—",
       subType: "success",
-      icon: "ti-send",
+      icon: "ti-package",
     },
     {
       label: "En attente",
-      value: stats.colis?.enAttente ?? colisAttente.length ?? "—",
+      value: colisAttente.length ?? "—",
       subType: "warning",
       icon: "ti-clock",
     },
@@ -313,7 +322,7 @@ function Accueil() {
             <span>Aucun colis en attente</span>
           </div>
         ) : (
-          <ColisTable data={colisAttente.slice(0, 5)} />
+          <ColisTable data={colisAttente.slice(0, 5)} onRefresh={fetchData} />
         )}
       </div>
     </>
@@ -325,38 +334,90 @@ function Accueil() {
 ══════════════════════════════════════ */
 function ListeColis() {
   const [colis, setColis] = useState([]);
+  const [filter, setFilter] = useState("tous"); // "tous" | "en_attente" | "recupere" | "livre"
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [counts, setCounts] = useState({ tous: 0, en_attente: 0, recupere: 0, livre: 0 });
+
+  const fetchCounts = useCallback(async () => {
+    try {
+      const [nbTous, nbAttente, nbRecupere, nbLivre] = await Promise.all([
+        getNombreColis(),
+        getNombreColisEnAttente(),
+        getNombreColisRecuperes(),
+        getNombreColisLivres(),
+      ]);
+      setCounts({
+        tous: nbTous?.nombre_colis ?? 0,
+        en_attente: nbAttente?.nombre_colis ?? 0,
+        recupere: nbRecupere?.nombre_colis ?? 0,
+        livre: nbLivre?.nombre_colis ?? 0,
+      });
+    } catch (e) {
+      console.error("Error loading counts", e);
+    }
+  }, []);
 
   const fetchColis = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getColisEnvoyes();
+      let data;
+      if (filter === "tous") {
+        data = await getListeColis();
+      } else if (filter === "en_attente") {
+        data = await getColisEnAttente();
+      } else if (filter === "recupere") {
+        data = await getColisRecuperes();
+      } else if (filter === "livre") {
+        data = await getColisLivres();
+      }
       setColis(data?.colis || data || []);
+      await fetchCounts();
     } catch {
       setError("Impossible de charger la liste des colis.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [filter, fetchCounts]);
 
-  useEffect(() => { fetchColis(); }, [fetchColis]);
+  useEffect(() => {
+    fetchColis();
+  }, [fetchColis]);
 
   const filtered = colis.filter((c) => {
+    if (!search.trim()) return true;
     const q = search.toLowerCase();
+    const ref = (c.reference || "").toLowerCase();
+    const dest = (c.destination || "").toLowerCase();
+
+    // Extract labels safely
+    const expName = `${c.expediteur?.prenom || ""} ${c.expediteur?.nom || ""}`.toLowerCase();
+    const recName = `${c.recepteur?.prenom || ""} ${c.recepteur?.nom || ""}`.toLowerCase();
+    const expRaw = typeof c.expediteur === "string" ? c.expediteur.toLowerCase() : "";
+    const recRaw = typeof c.destinataire === "string" ? c.destinataire.toLowerCase() : "";
+
     return (
-      c.reference?.toLowerCase().includes(q) ||
-      c.expediteur?.toLowerCase().includes(q) ||
-      c.destinataire?.toLowerCase().includes(q) ||
-      c.destination?.toLowerCase().includes(q)
+      ref.includes(q) ||
+      dest.includes(q) ||
+      expName.includes(q) ||
+      recName.includes(q) ||
+      expRaw.includes(q) ||
+      recRaw.includes(q)
     );
   });
 
+  const tabItems = [
+    { key: "tous", label: "Tous", icon: "ti-package", count: counts.tous },
+    { key: "en_attente", label: "En attente", icon: "ti-clock", count: counts.en_attente },
+    { key: "recupere", label: "Récupérés", icon: "ti-truck", count: counts.recupere },
+    { key: "livre", label: "Livrés", icon: "ti-circle-check", count: counts.livre },
+  ];
+
   return (
     <div className="db-table-card">
-      <div className="db-table-header">
+      <div className="db-table-header" style={{ borderBottom: "none", paddingBottom: "10px" }}>
         <span className="db-table-title">Tous les colis</span>
         <div className="db-table-actions">
           <div className="db-search-wrap">
@@ -380,6 +441,24 @@ function ListeColis() {
         </div>
       </div>
 
+      {/* Segmented Control Tabs */}
+      <div className="db-tabs-segment">
+        {tabItems.map((item) => (
+          <button
+            key={item.key}
+            className={`db-tab-segment-btn ${filter === item.key ? "active" : ""}`}
+            onClick={() => {
+              setFilter(item.key);
+              setSearch("");
+            }}
+          >
+            <i className={`ti ${item.icon}`} aria-hidden="true" />
+            <span>{item.label}</span>
+            <span className="db-tab-badge">{item.count}</span>
+          </button>
+        ))}
+      </div>
+
       {loading && <Spinner />}
       {!loading && error && <ErrorBanner message={error} onRetry={fetchColis} />}
       {!loading && !error && filtered.length === 0 && (
@@ -388,12 +467,16 @@ function ListeColis() {
           <span>{search ? "Aucun résultat pour cette recherche" : "Aucun colis trouvé"}</span>
         </div>
       )}
-      {!loading && !error && filtered.length > 0 && <ColisTable data={filtered} />}
+      {!loading && !error && filtered.length > 0 && (
+        <ColisTable data={filtered} onRefresh={fetchColis} />
+      )}
     </div>
   );
 }
 
-function ColisTable({ data }) {
+function ColisTable({ data, onRefresh }) {
+  const [updatingId, setUpdatingId] = useState(null);
+
   const getExpediteurLabel = (c) => {
     if (!c) return "—";
     if (c.expediteur && typeof c.expediteur === "object") {
@@ -409,6 +492,54 @@ function ColisTable({ data }) {
       return `${target.prenom || ""} ${target.nom || ""}`.trim() || "—";
     }
     return c.destinataire || c.recepteur || "—";
+  };
+
+  const handleStatusChange = async (colisId, newStatus) => {
+    const actionText =
+      newStatus === "en_attente" ? "mettre en attente" :
+        newStatus === "recupere" ? "marquer comme récupéré" : "marquer comme livré";
+
+    const result = await Swal.fire({
+      title: "Modifier le statut du colis ?",
+      text: `Êtes-vous sûr de vouloir ${actionText} ce colis ?`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#f97316",
+      cancelButtonColor: "#aaa",
+      confirmButtonText: "Oui, confirmer",
+      cancelButtonText: "Annuler",
+    });
+
+    if (!result.isConfirmed) return;
+
+    setUpdatingId(colisId);
+    try {
+      if (newStatus === "en_attente") {
+        await changerStatutEnAttente(colisId);
+      } else if (newStatus === "recupere") {
+        await changerStatutRecupere(colisId);
+      } else if (newStatus === "livre") {
+        await changerStatutLivre(colisId);
+      }
+
+      Swal.fire({
+        title: "Statut mis à jour !",
+        text: "Le statut du colis a été modifié avec succès.",
+        icon: "success",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      Swal.fire({
+        title: "Erreur !",
+        text: err.response?.data?.message || "Impossible de modifier le statut.",
+        icon: "error",
+      });
+    } finally {
+      setUpdatingId(null);
+    }
   };
 
   return (
@@ -434,6 +565,7 @@ function ColisTable({ data }) {
               className: "badge badge--warning",
               icon: "ti-help-circle",
             };
+            const id = c._id || c.id;
             return (
               <tr key={c.reference || i}>
                 <td className="db-td-primary">{c.reference || "—"}</td>
@@ -448,14 +580,80 @@ function ColisTable({ data }) {
                     {s.label}
                   </span>
                 </td>
-                <td>
-                  <div className="db-row-actions">
-                    <button className="db-action-btn" aria-label="Modifier">
-                      <i className="ti ti-edit" aria-hidden="true" />
-                    </button>
-                    <button className="db-action-btn db-action-btn--danger" aria-label="Supprimer">
-                      <i className="ti ti-trash" aria-hidden="true" />
-                    </button>
+                <td style={{ minWidth: "260px" }}>
+                  <div className="db-row-actions" style={{ display: "flex", gap: "6px" }}>
+                    {updatingId === id ? (
+                      <span className="db-spinner db-spinner--sm" />
+                    ) : (
+                      <>
+                        {c.statut !== "en_attente" && (
+                          <button
+                            className="db-action-pill-btn"
+                            onClick={() => handleStatusChange(id, "en_attente")}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              padding: "6px 10px",
+                              borderRadius: "8px",
+                              fontSize: "12px",
+                              fontWeight: "600",
+                              border: "1px solid #ffedd5",
+                              backgroundColor: "#fff7ed",
+                              color: "#ea580c",
+                              cursor: "pointer"
+                            }}
+                          >
+                            <i className="ti ti-clock" aria-hidden="true" />
+                            <span>En attente</span>
+                          </button>
+                        )}
+                        {c.statut !== "recupere" && (
+                          <button
+                            className="db-action-pill-btn"
+                            onClick={() => handleStatusChange(id, "recupere")}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              padding: "6px 10px",
+                              borderRadius: "8px",
+                              fontSize: "12px",
+                              fontWeight: "600",
+                              border: "1px solid #dcfce7",
+                              backgroundColor: "#f0fdf4",
+                              color: "#16a34a",
+                              cursor: "pointer"
+                            }}
+                          >
+                            <i className="ti ti-truck" aria-hidden="true" />
+                            <span>Récupéré</span>
+                          </button>
+                        )}
+                        {c.statut !== "livre" && (
+                          <button
+                            className="db-action-pill-btn"
+                            onClick={() => handleStatusChange(id, "livre")}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              padding: "6px 10px",
+                              borderRadius: "8px",
+                              fontSize: "12px",
+                              fontWeight: "600",
+                              border: "1px solid #e0f2fe",
+                              backgroundColor: "#f0f9ff",
+                              color: "#0284c7",
+                              cursor: "pointer"
+                            }}
+                          >
+                            <i className="ti ti-circle-check" aria-hidden="true" />
+                            <span>Livré</span>
+                          </button>
+                        )}
+                      </>
+                    )}
                   </div>
                 </td>
               </tr>

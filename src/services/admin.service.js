@@ -82,28 +82,11 @@ export const getNombreUtilisateurs = async () => {
 
 /* ========================= COLIS ========================= */
 
-export const getColisEnvoyes = async () => {
-  const name = "Colis envoyés";
+export const getListeColis = async () => {
+  const name = "Liste de tous les colis";
   try {
     logRequest(name);
-
-    const res = await api.get("/admin/colis-envoyes");
-
-    logResponse(name, res);
-    return res.data;
-  } catch (error) {
-    logError(name, error);
-    throw error;
-  }
-};
-
-export const getColisAttente = async () => {
-  const name = "Colis en attente";
-  try {
-    logRequest(name);
-
-    const res = await api.get("/admin/colis-attente");
-
+    const res = await api.get("/admin/liste-colis");
     logResponse(name, res);
     return res.data;
   } catch (error) {
@@ -113,12 +96,10 @@ export const getColisAttente = async () => {
 };
 
 export const getNombreColis = async () => {
-  const name = "Nombre colis";
+  const name = "Nombre total colis";
   try {
     logRequest(name);
-
     const res = await api.get("/admin/nombre-colis");
-
     logResponse(name, res);
     return res.data;
   } catch (error) {
@@ -127,13 +108,128 @@ export const getNombreColis = async () => {
   }
 };
 
-export const getStatistiquesColis = async () => {
-  const name = "Statistiques colis";
+export const getColisEnAttente = async () => {
+  const name = "Colis en attente";
   try {
     logRequest(name);
+    const res = await api.get("/admin/colis-en-attente");
+    logResponse(name, res);
+    return res.data;
+  } catch (error) {
+    logError(name, error);
+    throw error;
+  }
+};
 
-    const res = await api.get("/admin/statistiques-colis");
+export const getNombreColisEnAttente = async () => {
+  const name = "Nombre colis en attente";
+  try {
+    logRequest(name);
+    const res = await api.get("/admin/nombre-colis-en-attente");
+    logResponse(name, res);
+    return res.data;
+  } catch (error) {
+    logError(name, error);
+    throw error;
+  }
+};
 
+export const getColisLivres = async () => {
+  const name = "Colis livrés";
+  try {
+    logRequest(name);
+    const res = await api.get("/admin/colis-livres");
+    logResponse(name, res);
+    return res.data;
+  } catch (error) {
+    logError(name, error);
+    throw error;
+  }
+};
+
+export const getNombreColisLivres = async () => {
+  const name = "Nombre colis livrés";
+  try {
+    logRequest(name);
+    const res = await api.get("/admin/nombre-colis-livres");
+    logResponse(name, res);
+    return res.data;
+  } catch (error) {
+    logError(name, error);
+    throw error;
+  }
+};
+
+export const getColisRecuperes = async () => {
+  const name = "Colis récupérés";
+  try {
+    logRequest(name);
+    const res = await api.get("/admin/colis-recuperes");
+    logResponse(name, res);
+    return res.data;
+  } catch (error) {
+    logError(name, error);
+    throw error;
+  }
+};
+
+export const getNombreColisRecuperes = async () => {
+  const name = "Nombre colis récupérés";
+  try {
+    logRequest(name);
+    const res = await api.get("/admin/nombre-colis-recuperes");
+    logResponse(name, res);
+    return res.data;
+  } catch (error) {
+    logError(name, error);
+    throw error;
+  }
+};
+
+export const rechercherColis = async (reference) => {
+  const name = "Rechercher colis";
+  try {
+    logRequest(name, { reference });
+    const res = await api.get(`/admin/colis-recherche/${reference}`);
+    logResponse(name, res);
+    return res.data;
+  } catch (error) {
+    logError(name, error);
+    throw error;
+  }
+};
+
+export const changerStatutEnAttente = async (id) => {
+  const name = "Changer statut en attente";
+  try {
+    logRequest(name, { id });
+    const res = await api.put(`/admin/changer-statut-en-attente/${id}`);
+    logResponse(name, res);
+    return res.data;
+  } catch (error) {
+    logError(name, error);
+    throw error;
+  }
+};
+
+export const changerStatutLivre = async (id) => {
+  const name = "Changer statut livré";
+  try {
+    logRequest(name, { id });
+    const res = await api.put(`/admin/changer-statut-livre/${id}`);
+    logResponse(name, res);
+    return res.data;
+  } catch (error) {
+    logError(name, error);
+    throw error;
+  }
+};
+
+export const changerStatutRecupere = async (id) => {
+  const name = "Changer statut récupéré";
+  try {
+    logRequest(name, { id });
+    const res = await api.put(`/admin/changer-statut-recupere/${id}`);
     logResponse(name, res);
     return res.data;
   } catch (error) {
