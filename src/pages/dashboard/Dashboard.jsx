@@ -394,6 +394,23 @@ function ListeColis() {
 }
 
 function ColisTable({ data }) {
+  const getExpediteurLabel = (c) => {
+    if (!c) return "—";
+    if (c.expediteur && typeof c.expediteur === "object") {
+      return `${c.expediteur.prenom || ""} ${c.expediteur.nom || ""}`.trim() || "—";
+    }
+    return c.expediteur || "—";
+  };
+
+  const getDestinataireLabel = (c) => {
+    if (!c) return "—";
+    const target = c.recepteur || c.destinataire;
+    if (target && typeof target === "object") {
+      return `${target.prenom || ""} ${target.nom || ""}`.trim() || "—";
+    }
+    return c.destinataire || c.recepteur || "—";
+  };
+
   return (
     <div className="db-table-wrap">
       <table className="db-table">
@@ -420,8 +437,8 @@ function ColisTable({ data }) {
             return (
               <tr key={c.reference || i}>
                 <td className="db-td-primary">{c.reference || "—"}</td>
-                <td>{c.expediteur || "—"}</td>
-                <td>{c.destinataire || "—"}</td>
+                <td>{getExpediteurLabel(c)}</td>
+                <td>{getDestinataireLabel(c)}</td>
                 <td>{c.destination || "—"}</td>
                 <td>{c.poids != null ? `${c.poids} kg` : "—"}</td>
                 <td>{c.prix != null ? `${Number(c.prix).toFixed(2)} €` : "—"}</td>
