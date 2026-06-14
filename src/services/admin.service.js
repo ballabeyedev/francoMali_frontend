@@ -2,21 +2,10 @@ import api from "./api";
 
 /* ========================= LOG HELPERS ========================= */
 
-const logRequest = (name, data) => {
-  console.log(`🚀 [REQUEST] ${name}`, data || "");
-};
-
-const logResponse = (name, res) => {
-  console.log(`✅ [RESPONSE] ${name}`, res.data);
-};
-
-const logError = (name, error) => {
-  console.error(`❌ [ERROR] ${name}`, {
-    message: error.message,
-    data: error.response?.data,
-    status: error.response?.status,
-  });
-};
+/* Logs neutralisés : aucune donnée sensible (réponses, tokens) n'est exposée en console. */
+const logRequest = () => {};
+const logResponse = () => {};
+const logError = () => {};
 
 /* ========================= UTILISATEURS ========================= */
 

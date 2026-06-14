@@ -27,7 +27,7 @@ export default function ShipmentCalculator({ onPriceCalculated }) {
         const response = await countryAPI.getAllCountries({ isActive: true });
         setCountries(response.data || []);
       } catch (err) {
-        console.error('Error fetching countries:', err);
+        console.error('Error fetching countries:');
         setError('Erreur lors du chargement des pays');
       } finally {
         setLoading(false);
@@ -67,7 +67,7 @@ export default function ShipmentCalculator({ onPriceCalculated }) {
         setPriceBreakdown(null);
       }
     } catch (err) {
-      console.error('Error calculating price:', err);
+      console.error('Error calculating price:');
       setError(err.message || 'Erreur lors du calcul du prix');
       setPriceBreakdown(null);
     } finally {

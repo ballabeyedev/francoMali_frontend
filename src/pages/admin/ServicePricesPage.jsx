@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import servicePriceAPI from '../../api/servicePrice.api';
 import countryAPI from '../../api/country.api';
+import { validatePrice } from '../../utils/validation';
 import './AdminPages.css';
 
 export default function ServicePricesPage() {
@@ -24,8 +25,8 @@ export default function ServicePricesPage() {
     try {
       const response = await countryAPI.getAllCountries();
       setCountries(response.data || []);
-    } catch (error) {
-      console.error('Error fetching countries:', error);
+    } catch {
+      console.error('Error fetching countries:');
     }
   };
 
@@ -34,8 +35,8 @@ export default function ServicePricesPage() {
     try {
       const response = await servicePriceAPI.getAllServicePrices(filters);
       setPrices(response.data || []);
-    } catch (error) {
-      console.error('Error fetching prices:', error);
+    } catch {
+      console.error('Error fetching prices:');
       alert('Erreur lors de la récupération des prix');
     } finally {
       setLoading(false);
@@ -59,6 +60,11 @@ export default function ServicePricesPage() {
       return;
     }
 
+    if (!validatePrice(formData.price)) {
+      alert('Prix invalide (nombre positif, max 2 décimales)');
+      return;
+    }
+
     try {
       const data = {
         countryId: formData.countryId,
@@ -76,7 +82,6 @@ export default function ServicePricesPage() {
       resetForm();
       fetchPrices();
     } catch (error) {
-      console.error('Error saving price:', error);
       alert(error.message || 'Erreur lors de l\'enregistrement');
     }
   };
@@ -99,8 +104,8 @@ export default function ServicePricesPage() {
         await servicePriceAPI.deleteServicePrice(id);
         alert('Prix supprimé avec succès');
         fetchPrices();
-      } catch (error) {
-        console.error('Error deleting price:', error);
+      } catch {
+        console.error('Error deleting price:');
         alert('Erreur lors de la suppression');
       }
     }

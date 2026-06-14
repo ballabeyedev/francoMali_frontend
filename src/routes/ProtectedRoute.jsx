@@ -1,71 +1,32 @@
 import { Navigate } from "react-router-dom";
+import { useAuth } from "../context/useAuth";
 
 /**
- * Vérifie :
- * - token
- * - utilisateur
- * - rôle admin
- * - expiration JWT
+ * Route protégée basée sur le contexte d'authentification (cookies httpOnly).
+ *
+ * La validité de la session est déterminée côté serveur via GET /auth/me
+ * (appelé par AuthProvider au montage). On ne décode plus aucun JWT côté
+ * client et on ne lit plus de token dans localStorage.
  */
-
 export default function ProtectedRoute({ children }) {
+  const { user, loading } = useAuth();
 
-  let auth = null;
-
-  try {
-    const raw = localStorage.getItem("auth");
-    auth = raw ? JSON.parse(raw) : null;
-  } catch {
-    auth = null;
+  if (loading) {
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+        <span className="db-spinner" aria-label="Chargement…" />
+      </div>
+    );
   }
 
-  // ❌ pas connecté
-  if (!auth?.token || !auth?.user) {
-    localStorage.removeItem("auth");
+  if (!user) {
     return <Navigate to="/francomaliship/auth/login" replace />;
   }
 
-  // ✅ vérifier expiration token JWT
-  try {
-    const payload = JSON.parse(atob(auth.token.split('.')[1]));
-
-    // temps actuel en secondes
-    const now = Date.now() / 1000;
-
-    // token expiré
-    if (payload.exp < now) {
-      localStorage.removeItem("auth");
-
-      return (
-        <Navigate
-          to="/francomaliship/auth/login"
-          replace
-        />
-      );
-    }
-  } catch (error) {
-    localStorage.removeItem("auth");
-
-    return (
-      <Navigate
-        to="/francomaliship/auth/login"
-        replace
-      />
-    );
+  // Réservé aux administrateurs
+  if (user.role !== "Admin" && user.role !== "SuperAdmin") {
+    return <Navigate to="/francomaliship/auth/login" replace />;
   }
 
-  // ❌ pas admin
-  if (auth.user.role !== "Admin") {
-    localStorage.removeItem("auth");
-
-    return (
-      <Navigate
-        to="/francomaliship/auth/login"
-        replace
-      />
-    );
-  }
-
-  // ✅ accès autorisé
   return children;
 }

@@ -1,7 +1,8 @@
 import Swal from 'sweetalert2';
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { logout, getUser } from "../../services/auth.service";
+import { getUser } from "../../services/auth.service";
+import { useAuth } from "../../context/useAuth";
 import {
   getUtilisateurs,
   activerUtilisateur,
@@ -15,7 +16,6 @@ import {
   getNombreColisEnAttente,
   getNombreColisLivres,
   getNombreColisRecuperes,
-  rechercherColis,
   changerStatutEnAttente,
   changerStatutLivre,
   changerStatutRecupere,
@@ -29,7 +29,7 @@ import {
   rechercherAdmin,
   rechercherUtilisateur,
 } from "../../services/admin.service";
-import { setAuth, getAuth } from "../../services/api";
+import { setStoredUser } from "../../services/api";
 import "../../assets/css/Dashboard.css";
 
 /* ── Helpers ── */
@@ -89,6 +89,7 @@ function ErrorBanner({ message, onRetry }) {
 ══════════════════════════════════════ */
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [selectedMenu, setSelectedMenu] = useState("accueil");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -109,7 +110,7 @@ export default function Dashboard() {
       cancelButtonText: "Annuler",
     });
     if (result.isConfirmed) {
-      logout();
+      await logout();
       navigate("/francomaliship/auth/login");
     }
   };
@@ -407,8 +408,8 @@ function ListeColis() {
         recupere: nbRecupere?.nombre_colis ?? 0,
         livre: nbLivre?.nombre_colis ?? 0,
       });
-    } catch (e) {
-      console.error("Error loading counts", e);
+    } catch {
+      console.error("Error loading counts");
     }
   }, []);
 
@@ -1467,6 +1468,7 @@ function ListeAdmins() {
    ══════════════════════════════════════ */
 function Profil({ user, onUpdateUser }) {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const initials = getInitials(user.nom || "Admin");
   const fullNom = `${user.prenom || ""} ${user.nom || "Admin"}`;
 
@@ -1522,11 +1524,8 @@ function Profil({ user, onUpdateUser }) {
       // On capture l'utilisateur renvoyé par l'API
       const updatedUser = responseData.data || responseData.user || responseData;
 
-      // On met à jour le localStorage pour garder la session synchronisée
-      const auth = getAuth();
-      if (auth?.token) {
-        setAuth(auth.token, updatedUser);
-      }
+      // On met à jour les infos utilisateur stockées (non sensibles)
+      setStoredUser(updatedUser);
 
       // On notifie le composant principal (Dashboard) pour mettre à jour l'état réactif
       if (onUpdateUser) {

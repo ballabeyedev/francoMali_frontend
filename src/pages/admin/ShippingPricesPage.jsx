@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import shippingPriceAPI from '../../api/shippingPrice.api';
 import countryAPI from '../../api/country.api';
+import { validatePrice } from '../../utils/validation';
 import './AdminPages.css';
 
 export default function ShippingPricesPage() {
@@ -26,8 +27,8 @@ export default function ShippingPricesPage() {
     try {
       const response = await countryAPI.getAllCountries();
       setCountries(response.data || []);
-    } catch (error) {
-      console.error('Error fetching countries:', error);
+    } catch {
+      console.error('Error fetching countries:');
     }
   };
 
@@ -36,8 +37,8 @@ export default function ShippingPricesPage() {
     try {
       const response = await shippingPriceAPI.getAllShippingPrices(filters);
       setPrices(response.data || []);
-    } catch (error) {
-      console.error('Error fetching prices:', error);
+    } catch {
+      console.error('Error fetching prices:');
       alert('Erreur lors de la récupération des prix');
     } finally {
       setLoading(false);
@@ -58,6 +59,11 @@ export default function ShippingPricesPage() {
 
     if (!formData.countryId || !formData.minWeight || !formData.maxWeight || !formData.pricePerKg) {
       alert('Tous les champs sont obligatoires');
+      return;
+    }
+
+    if (!validatePrice(formData.minWeight) || !validatePrice(formData.maxWeight) || !validatePrice(formData.pricePerKg)) {
+      alert('Les valeurs numériques sont invalides (nombres positifs, max 2 décimales)');
       return;
     }
 
@@ -85,7 +91,6 @@ export default function ShippingPricesPage() {
       resetForm();
       fetchPrices();
     } catch (error) {
-      console.error('Error saving price:', error);
       alert(error.message || 'Erreur lors de l\'enregistrement');
     }
   };
@@ -110,8 +115,8 @@ export default function ShippingPricesPage() {
         await shippingPriceAPI.deleteShippingPrice(id);
         alert('Prix supprimé avec succès');
         fetchPrices();
-      } catch (error) {
-        console.error('Error deleting price:', error);
+      } catch {
+        console.error('Error deleting price:');
         alert('Erreur lors de la suppression');
       }
     }

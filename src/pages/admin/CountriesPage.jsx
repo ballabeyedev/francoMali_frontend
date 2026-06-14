@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import countryAPI from '../../api/country.api';
+import { sanitizeInput, validateCountryName } from '../../utils/validation';
 import './AdminPages.css';
 
 export default function CountriesPage() {
@@ -20,8 +21,8 @@ export default function CountriesPage() {
     try {
       const response = await countryAPI.getAllCountries();
       setCountries(response.data || []);
-    } catch (error) {
-      console.error('Error fetching countries:', error);
+    } catch {
+      console.error('Error fetching countries:');
       alert('Erreur lors de la récupération des pays');
     } finally {
       setLoading(false);
@@ -41,18 +42,29 @@ export default function CountriesPage() {
       return;
     }
 
+    if (!validateCountryName(formData.name)) {
+      alert('Nom de pays invalide (lettres, espaces, tirets uniquement)');
+      return;
+    }
+
+    // Nettoyage anti-XSS avant envoi
+    const payload = {
+      ...formData,
+      name: sanitizeInput(formData.name),
+      code: sanitizeInput(formData.code).toUpperCase(),
+    };
+
     try {
       if (editingId) {
-        await countryAPI.updateCountry(editingId, formData);
+        await countryAPI.updateCountry(editingId, payload);
         alert('Pays mis à jour avec succès');
       } else {
-        await countryAPI.createCountry(formData);
+        await countryAPI.createCountry(payload);
         alert('Pays créé avec succès');
       }
       resetForm();
       fetchCountries();
     } catch (error) {
-      console.error('Error saving country:', error);
       alert(error.message || 'Erreur lors de l\'enregistrement');
     }
   };
@@ -75,8 +87,8 @@ export default function CountriesPage() {
         await countryAPI.deleteCountry(id);
         alert('Pays supprimé avec succès');
         fetchCountries();
-      } catch (error) {
-        console.error('Error deleting country:', error);
+      } catch {
+        console.error('Error deleting country:');
         alert('Erreur lors de la suppression');
       }
     }
