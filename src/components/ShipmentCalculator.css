@@ -1,0 +1,247 @@
+.shipment-calculator {
+  padding: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.calculator-card {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+}
+
+.calculator-card h2 {
+  margin-top: 0;
+  margin-bottom: 25px;
+  font-size: 24px;
+  color: #333;
+  text-align: center;
+}
+
+.form-section {
+  margin-bottom: 25px;
+}
+
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #333;
+  font-size: 14px;
+}
+
+.form-group select,
+.form-group input[type="number"] {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.3s ease;
+}
+
+.form-group select:focus,
+.form-group input[type="number"]:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.form-group select:disabled {
+  background-color: #f0f0f0;
+  cursor: not-allowed;
+}
+
+.radio-group {
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  gap: 20px;
+}
+
+.radio-group legend {
+  display: none;
+}
+
+.radio-group label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 400;
+}
+
+.radio-group input[type="radio"] {
+  width: auto;
+  margin: 0;
+  cursor: pointer;
+}
+
+.form-group.checkbox {
+  margin-bottom: 12px;
+}
+
+.form-group.checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 0;
+  cursor: pointer;
+  font-weight: 400;
+}
+
+.form-group.checkbox input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  cursor: pointer;
+}
+
+.error-message {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  border: 1px solid #f5c6cb;
+}
+
+.btn-calculate {
+  width: 100%;
+  padding: 12px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-top: 10px;
+}
+
+.btn-calculate:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.btn-calculate:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.price-breakdown {
+  margin-top: 30px;
+  padding-top: 25px;
+  border-top: 2px solid #eee;
+}
+
+.price-breakdown h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 18px;
+  color: #333;
+}
+
+.breakdown-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  font-size: 14px;
+  color: #555;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.breakdown-item span:first-child {
+  font-weight: 500;
+}
+
+.breakdown-item .price {
+  color: #007bff;
+  font-weight: 600;
+}
+
+.breakdown-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px 0;
+  margin-top: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #333;
+  border-top: 2px solid #ddd;
+}
+
+.breakdown-total .total-price {
+  color: #28a745;
+  font-size: 20px;
+}
+
+.breakdown-info {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #555;
+}
+
+.breakdown-info p {
+  margin: 8px 0;
+}
+
+.breakdown-info strong {
+  color: #333;
+  font-weight: 600;
+}
+
+@media (max-width: 480px) {
+  .shipment-calculator {
+    padding: 15px;
+  }
+
+  .calculator-card {
+    padding: 20px;
+  }
+
+  .calculator-card h2 {
+    font-size: 20px;
+    margin-bottom: 20px;
+  }
+
+  .radio-group {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .btn-calculate {
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  .price-breakdown h3 {
+    font-size: 16px;
+    margin-bottom: 15px;
+  }
+
+  .breakdown-item {
+    padding: 8px 0;
+    font-size: 13px;
+  }
+
+  .breakdown-total {
+    padding: 12px 0;
+    font-size: 15px;
+  }
+
+  .breakdown-total .total-price {
+    font-size: 18px;
+  }
+}
