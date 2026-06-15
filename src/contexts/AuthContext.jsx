@@ -3,6 +3,7 @@ import { getMe, loginApi, logoutApi } from '../api/auth.api';
 import { getUserId, setUserId, clearSession } from '../utils/storage';
 import { setCsrfToken } from '../api/axiosInstance';
 import { authContextObject } from './authContextObject';
+import { logger } from '../utils/logger';
 
 export const AuthContext = createContext(authContextObject);
 
@@ -33,7 +34,15 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (identifiant, motDePasse) => {
     const res = await loginApi(identifiant, motDePasse);
+    logger.info('Auth:raw', 'res.data reçu', {
+      keys: res.data ? Object.keys(res.data) : null,
+      utilisateur: res.data?.utilisateur ? Object.keys(res.data.utilisateur) : null,
+      status: res.status,
+    });
     const userData = res.data?.utilisateur ?? res.data?.user ?? res.data;
+    if (!userData || typeof userData !== 'object') {
+      throw Object.assign(new Error('Réponse serveur invalide — utilisateur manquant'), { response: res });
+    }
     const csrfT = res.data?.csrfToken ?? res.headers?.['x-csrf-token'];
     const menusData = res.data?.menus || [];
     if (csrfT) setCsrfToken(csrfT);

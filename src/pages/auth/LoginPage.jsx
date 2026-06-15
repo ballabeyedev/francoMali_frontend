@@ -27,7 +27,7 @@ export default function LoginPage() {
     try {
       const user = await login(email, motDePasse);
       logger.info('Auth', 'Connexion réussie', { id: user?.id, role: user?.role });
-      toast.success('Connexion réussie', `Bienvenue, ${user.prenom || user.nom || 'Admin'} !`);
+      toast.success('Connexion réussie', `Bienvenue, ${user?.prenom || user?.nom || 'Admin'} !`);
       navigate(ROUTES.DASHBOARD, { replace: true });
     } catch (err) {
       const status  = err?.response?.status;
