@@ -1,6 +1,8 @@
 import { Navigate, Outlet } from 'react-router-dom';
-import { getUserId } from '../utils/storage';
+import useAuth from '../hooks/useAuth';
 import { ROUTES } from '../constants/routes';
+
 export default function GuestRoute() {
-  return getUserId() ? <Navigate to={ROUTES.DASHBOARD} replace /> : <Outlet />;
+  const { user } = useAuth();
+  return user ? <Navigate to={ROUTES.DASHBOARD} replace /> : <Outlet />;
 }

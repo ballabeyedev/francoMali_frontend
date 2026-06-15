@@ -1,71 +1,68 @@
-import { createContext, useState, useEffect, useCallback } from 'react';
-import { getMe, loginApi, logoutApi } from '../api/auth.api';
-import { getUserId, setUserId, setToken, removeToken, clearSession } from '../utils/storage';
+import { createContext, useState, useCallback } from 'react';
+import { loginApi, logoutApi } from '../api/auth.api';
+import { setToken, removeToken, clearSession } from '../utils/storage';
 import { authContextObject } from './authContextObject';
-import { logger } from '../utils/logger';
+
+// Décode le payload JWT sans vérification (côté client, usage affichage uniquement)
+function parseJwt(token) {
+  try {
+    const b64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(atob(b64));
+  } catch {
+    return null;
+  }
+}
 
 export const AuthContext = createContext(authContextObject);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser]   = useState(null);
+  const [loading]         = useState(false);   // plus de fetchMe bloquant
   const [menus, setMenus] = useState(() => {
     try { return JSON.parse(localStorage.getItem('fms_menus') || '[]'); } catch { return []; }
   });
 
-  const fetchMe = useCallback(async () => {
-    if (!getUserId()) { setLoading(false); return; }
-    try {
-      const res = await getMe();
-      const userData = res.data?.utilisateur ?? res.data?.user ?? res.data;
-      setUser(userData);
-    } catch {
-      clearSession();
-      localStorage.removeItem('fms_menus');
-      setUser(null);
-      setMenus([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchMe(); }, [fetchMe]);
-
   const login = useCallback(async (identifiant, motDePasse) => {
     const res = await loginApi(identifiant, motDePasse);
 
-    // eslint-disable-next-line no-console
-    console.log('🔍 AUTH RAW RESPONSE:', JSON.stringify(res.data));
-
     const token = res.data?.accessToken;
-    if (token) setToken(token);
+    if (!token) throw new Error('Token manquant dans la réponse serveur');
 
-    const userData = res.data?.utilisateur ?? res.data?.user ?? res.data;
-    if (!userData || typeof userData !== 'object' || Array.isArray(userData)) {
-      throw Object.assign(new Error('Réponse serveur invalide — utilisateur manquant'), { response: res });
-    }
+    // Stocker le token pour les requêtes suivantes
+    setToken(token);
+
+    // Lire les infos utilisateur depuis le payload JWT (fiable, pas de formatUser)
+    const payload = parseJwt(token);
+    if (!payload?.id) throw new Error('Token JWT invalide ou incomplet');
+
+    const userData = {
+      id:       payload.id,
+      nom:      payload.nom,
+      prenom:   payload.prenom,
+      email:    payload.email,
+      role:     payload.role,
+      adresse:  payload.adresse,
+      telephone:payload.telephone,
+    };
 
     const menusData = res.data?.menus || [];
-    setUserId(userData.id ?? userData._id ?? '');
-    setUser(userData);
     localStorage.setItem('fms_menus', JSON.stringify(menusData));
     setMenus(menusData);
+    setUser(userData);
     return userData;
   }, []);
 
   const logout = useCallback(async () => {
     try { await logoutApi(); } catch { /* ignore */ }
     clearSession();
-    localStorage.removeItem('fms_menus');
     removeToken();
+    localStorage.removeItem('fms_menus');
     setUser(null);
     setMenus([]);
   }, []);
 
-  const isFirstLogin = user?.isFirstLogin === true;
-
   return (
-    <AuthContext.Provider value={{ user, loading, menus, isFirstLogin, login, logout }}>
+    <AuthContext.Provider value={{ user, loading: false, menus, isFirstLogin: false, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
