@@ -1,17 +1,3 @@
-import api from '../services/api';
-
-const PUBLIC_API = '/francomaliship/pricing';
-
-export const pricingAPI = {
-  // Calculate price
-  calculatePrice: async (data) => {
-    try {
-      const response = await api.post(`${PUBLIC_API}/calculate`, data);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error;
-    }
-  },
-};
-
-export default pricingAPI;
+import api from './axiosInstance';
+import { ENDPOINTS } from '../constants/endpoints';
+export const calculatePrice = (data) => api.post(ENDPOINTS.PRICING.CALCULATE, data);
