@@ -1,203 +1,287 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import validator from 'validator';
+import { useEffect, useState, useCallback, memo } from 'react';
+import { getAdmins, creerAdmin, supprimerAdmin, getAdminPermissions, updateAdminPerms, getMenus } from '../../api/rbac.api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
-import ErrorState from '../../components/common/ErrorState';
-import EmptyState from '../../components/common/EmptyState';
-import SearchInput from '../../components/common/SearchInput';
-import Pagination from '../../components/common/Pagination';
-import Badge from '../../components/common/Badge';
 import SkeletonTable from '../../components/common/SkeletonTable';
-import PasswordStrength from '../../components/common/PasswordStrength';
+import Badge from '../../components/common/Badge';
 import Modal from '../../components/modals/Modal';
 import ConfirmModal from '../../components/modals/ConfirmModal';
 import FormField from '../../components/forms/FormField';
-import FormSelect from '../../components/forms/FormSelect';
+import SearchInput from '../../components/common/SearchInput';
+import Pagination from '../../components/common/Pagination';
+import { formatDate } from '../../utils/formatters';
+import { extractError } from '../../utils/apiHelpers';
 import { toast } from '../../utils/toast';
 import useDebounce from '../../hooks/useDebounce';
 import useTitle from '../../hooks/useTitle';
 import useSort from '../../hooks/useSort';
-import { getAdmins, rechercherAdmin, ajouterAdmin, activerAdmin, desactiverAdmin } from '../../api/admins.api';
-import { formatDate } from '../../utils/formatters';
-import { extractList, extractError } from '../../utils/apiHelpers';
 import { PAGE_SIZE } from '../../constants/ui';
 
-const isActif = (a) => a.actif ?? a.isActive ?? a.active ?? false;
-const EMPTY = { prenom: '', nom: '', email: '', motDePasse: '', confirmMdp: '', telephone: '', role: 'admin' };
+const EMPTY_FORM = { nom: '', prenom: '', email: '' };
 
-const ROLE_OPTIONS = [
-  { value: 'admin', label: 'Admin' },
-  { value: 'superadmin', label: 'Super Admin' },
-];
+const PermissionRow = memo(function PermissionRow({ menu, perm, onChange }) {
+  const actions = [
+    { key: 'canView',   label: 'Voir' },
+    { key: 'canCreate', label: 'Créer' },
+    { key: 'canUpdate', label: 'Modifier' },
+    { key: 'canDelete', label: 'Supprimer' },
+  ];
+  return (
+    <div className="perm-row">
+      <span className="perm-menu-name">{menu.name}</span>
+      <div className="perm-actions">
+        {actions.map(({ key, label }) => (
+          <label key={key} className="perm-checkbox">
+            <input
+              type="checkbox"
+              checked={perm?.[key] || false}
+              onChange={(e) => onChange(menu.id, key, e.target.checked)}
+            />
+            {label}
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+});
 
 export default function AdminsPage() {
-  useTitle('Gestion des administrateurs');
-  const [admins, setAdmins]   = useState([]);
+  useTitle('Administrateurs');
+  const [admins, setAdmins] = useState([]);
+  const [menus, setMenus] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState(null);
-  const [search, setSearch]   = useState('');
-  const [page, setPage]       = useState(1);
-  const [confirm, setConfirm] = useState(null);
-  const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm]       = useState(EMPTY);
-  const [formErrors, setFormErrors] = useState({});
-  const [saving, setSaving]   = useState(false);
-  const debounced = useDebounce(search, 300);
-  const { sorted, toggle, sortIcon } = useSort(admins, null);
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
 
-  const load = async () => {
-    setLoading(true);
-    setError(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [formErrors, setFormErrors] = useState({});
+  const [permissions, setPermissions] = useState({});
+  const [saving, setSaving] = useState(false);
+
+  const [permOpen, setPermOpen] = useState(false);
+  const [selectedAdmin, setSelectedAdmin] = useState(null);
+  const [editPerms, setEditPerms] = useState({});
+  const [savingPerms, setSavingPerms] = useState(false);
+
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
+  const debouncedSearch = useDebounce(search, 300);
+
+  const load = useCallback(async () => {
     try {
-      const res = debounced.trim() ? await rechercherAdmin(debounced.trim()) : await getAdmins();
-      setAdmins(extractList(res, 'admins', 'data'));
-    } catch (err) {
-      setError(extractError(err));
+      const [adminsRes, menusRes] = await Promise.all([getAdmins(), getMenus()]);
+      setAdmins(adminsRes.data?.admins || []);
+      setMenus(menusRes.data?.menus || []);
+    } catch (e) {
+      toast.error(extractError(e));
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const filtered = admins.filter((a) => {
+    const s = debouncedSearch.toLowerCase();
+    return !s || [a.nom, a.prenom, a.email].some((v) => (v || '').toLowerCase().includes(s));
+  });
+
+  const { sorted, toggle, SortIcon } = useSort(filtered, 'createdAt');
+  const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
+  const paginated = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const openCreate = () => {
+    setForm(EMPTY_FORM);
+    setFormErrors({});
+    const initPerms = {};
+    menus.forEach((m) => { initPerms[m.id] = { canView: false, canCreate: false, canUpdate: false, canDelete: false }; });
+    setPermissions(initPerms);
+    setCreateOpen(true);
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { load(); setPage(1); }, [debounced]);
-
-  const totalPages = Math.ceil((sorted?.length ?? 0) / PAGE_SIZE) || 1;
-  const pageItems = useMemo(
-    () => (sorted ?? []).slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
-    [sorted, page]
-  );
-
-  const setField = useCallback((k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value })), []);
-
-  const validate = () => {
-    const errs = {};
-    if (!form.prenom.trim()) errs.prenom = 'Prénom requis';
-    if (!form.nom.trim()) errs.nom = 'Nom requis';
-    if (!validator.isEmail(form.email.trim())) errs.email = 'Email invalide';
-    if (form.motDePasse.length < 8) errs.motDePasse = 'Minimum 8 caractères';
-    else if (!/[A-Z]/.test(form.motDePasse)) errs.motDePasse = '1 majuscule requise';
-    else if (!/[0-9]/.test(form.motDePasse)) errs.motDePasse = '1 chiffre requis';
-    else if (!/[^A-Za-z0-9]/.test(form.motDePasse)) errs.motDePasse = '1 caractère spécial requis';
-    if (form.confirmMdp !== form.motDePasse) errs.confirmMdp = 'Les mots de passe ne correspondent pas';
-    setFormErrors(errs);
-    return Object.keys(errs).length === 0;
+  const handlePermChange = (menuId, action, value) => {
+    setPermissions((p) => ({ ...p, [menuId]: { ...p[menuId], [action]: value } }));
   };
 
-  const handleAdd = async (e) => {
-    e.preventDefault();
-    if (!validate()) return;
+  const validateCreate = () => {
+    const e = {};
+    if (!form.nom.trim()) e.nom = 'Requis';
+    if (!form.prenom.trim()) e.prenom = 'Requis';
+    if (!form.email.trim()) e.email = 'Requis';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Email invalide';
+    setFormErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const handleCreate = async () => {
+    if (!validateCreate()) return;
     setSaving(true);
     try {
-      const { confirmMdp: _, ...payload } = form;
-      await ajouterAdmin(payload);
-      toast.success('Administrateur ajouté');
-      setShowAdd(false);
-      setForm(EMPTY);
-      setFormErrors({});
-      load();
-    } catch (err) {
-      toast.error(extractError(err));
+      const permList = Object.entries(permissions)
+        .filter(([, p]) => Object.values(p).some(Boolean))
+        .map(([menuId, p]) => ({ menuId: parseInt(menuId), ...p }));
+      await creerAdmin({ ...form, permissions: permList });
+      toast.success(`Admin ${form.prenom} ${form.nom} créé — email envoyé.`);
+      setCreateOpen(false);
+      await load();
+    } catch (e) {
+      toast.error(extractError(e));
     } finally {
       setSaving(false);
     }
   };
 
-  const handleConfirm = async () => {
-    if (!confirm) return;
+  const openPermissions = async (admin) => {
+    setSelectedAdmin(admin);
     try {
-      await confirm.action(confirm.id);
-      toast.success(confirm.activate ? 'Administrateur activé' : 'Administrateur désactivé');
-      setConfirm(null);
-      load();
-    } catch (err) {
-      toast.error(extractError(err));
-      setConfirm(null);
+      const res = await getAdminPermissions(admin.id);
+      const permsMap = {};
+      menus.forEach((m) => { permsMap[m.id] = { canView: false, canCreate: false, canUpdate: false, canDelete: false }; });
+      (res.data?.permissions || []).forEach((p) => {
+        permsMap[p.menuId] = { canView: p.canView, canCreate: p.canCreate, canUpdate: p.canUpdate, canDelete: p.canDelete };
+      });
+      setEditPerms(permsMap);
+      setPermOpen(true);
+    } catch (e) {
+      toast.error(extractError(e));
+    }
+  };
+
+  const handleSavePerms = async () => {
+    setSavingPerms(true);
+    try {
+      const permList = Object.entries(editPerms)
+        .map(([menuId, p]) => ({ menuId: parseInt(menuId), ...p }));
+      await updateAdminPerms(selectedAdmin.id, permList);
+      toast.success('Permissions mises à jour');
+      setPermOpen(false);
+    } catch (e) {
+      toast.error(extractError(e));
+    } finally {
+      setSavingPerms(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await supprimerAdmin(deleteTarget.id);
+      toast.success(`Admin ${deleteTarget.prenom} ${deleteTarget.nom} supprimé`);
+      setDeleteTarget(null);
+      await load();
+    } catch (e) {
+      toast.error(extractError(e));
     }
   };
 
   return (
     <div>
-      <div className="card">
-        <div className="card-header">
-          <div className="card-title">Administrateurs ({admins.length})</div>
-          <div style={{ display: 'flex', gap: '.75rem', flexWrap: 'wrap' }}>
-            <SearchInput value={search} onChange={setSearch} placeholder="Rechercher un admin…" />
-            <button className="btn btn-primary" onClick={() => { setForm(EMPTY); setFormErrors({}); setShowAdd(true); }}>+ Ajouter admin</button>
-          </div>
+      <div className="page-header">
+        <div className="page-header-left">
+          <h1>Administrateurs</h1>
+          <p>{admins.length} administrateur(s) au total</p>
         </div>
-
-        {loading ? <SkeletonTable rows={8} cols={7} />
-          : error ? <ErrorState message={error} onRetry={load} />
-          : admins.length === 0 ? <EmptyState message="Aucun administrateur trouvé" searchTerm={search} />
-          : (
-            <div className="table-wrap">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th onClick={() => toggle('prenom')} className="sortable-th" tabIndex={0} role="columnheader">Prénom <span className="sort-icon" aria-hidden="true">{sortIcon('prenom')}</span></th>
-                    <th onClick={() => toggle('nom')} className="sortable-th" tabIndex={0} role="columnheader">Nom <span className="sort-icon" aria-hidden="true">{sortIcon('nom')}</span></th>
-                    <th onClick={() => toggle('email')} className="sortable-th" tabIndex={0} role="columnheader">Email <span className="sort-icon" aria-hidden="true">{sortIcon('email')}</span></th>
-                    <th>Rôle</th><th>Statut</th><th>Date</th><th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pageItems.map((a) => {
-                    const id = a.id || a._id;
-                    const actif = isActif(a);
-                    return (
-                      <tr key={id || a.email}>
-                        <td className="td-bold">{a.prenom || '—'}</td>
-                        <td>{a.nom || '—'}</td>
-                        <td className="td-muted">{a.email || '—'}</td>
-                        <td className="td-muted">{a.role || 'admin'}</td>
-                        <td>{actif ? <Badge variant="success">Actif</Badge> : <Badge variant="danger">Inactif</Badge>}</td>
-                        <td className="td-muted">{formatDate(a.createdAt || a.dateCreation)}</td>
-                        <td>
-                          {actif
-                            ? <button className="btn btn-danger btn-sm" onClick={() => setConfirm({ id, action: desactiverAdmin, activate: false })}>Désactiver</button>
-                            : <button className="btn btn-success btn-sm" onClick={() => setConfirm({ id, action: activerAdmin, activate: true })}>Activer</button>}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} totalItems={admins.length} />
+        <button className="btn btn-primary" onClick={openCreate}>+ Nouvel administrateur</button>
       </div>
 
-      <Modal
-        isOpen={showAdd}
-        onClose={() => setShowAdd(false)}
-        title="Ajouter un administrateur"
-        footer={
-          <>
-            <button className="btn btn-secondary" onClick={() => setShowAdd(false)}>Annuler</button>
-            <button className="btn btn-primary" onClick={handleAdd} disabled={saving}>{saving ? 'Enregistrement…' : 'Créer'}</button>
-          </>
-        }
+      <div className="card">
+        <div className="card-header">
+          <span className="card-title">Liste des administrateurs</span>
+          <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Rechercher..." />
+        </div>
+        {loading ? <SkeletonTable rows={6} cols={5} /> : (
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th onClick={() => toggle('prenom')} className="sortable-th">Administrateur <SortIcon colKey="prenom" /></th>
+                  <th onClick={() => toggle('email')} className="sortable-th">Email <SortIcon colKey="email" /></th>
+                  <th>Première connexion</th>
+                  <th onClick={() => toggle('createdAt')} className="sortable-th">Inscrit le <SortIcon colKey="createdAt" /></th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginated.length === 0 ? (
+                  <tr><td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>
+                    {debouncedSearch ? `Aucun résultat pour "${debouncedSearch}"` : 'Aucun administrateur enregistré'}
+                  </td></tr>
+                ) : paginated.map((a) => (
+                  <tr key={a.id}>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div className="avatar-placeholder">{(a.prenom?.[0] || '')}{(a.nom?.[0] || '')}</div>
+                        <span className="td-bold">{a.prenom} {a.nom}</span>
+                      </div>
+                    </td>
+                    <td className="td-muted">{a.email}</td>
+                    <td>
+                      <Badge variant={a.isFirstLogin ? 'warning' : 'success'}>
+                        {a.isFirstLogin ? 'Non connecté' : 'Connecté'}
+                      </Badge>
+                    </td>
+                    <td className="td-muted">{formatDate(a.createdAt)}</td>
+                    <td>
+                      <div className="table-actions">
+                        <button className="btn btn-ghost btn-sm" onClick={() => openPermissions(a)}>Permissions</button>
+                        <button className="btn btn-danger btn-sm" onClick={() => setDeleteTarget(a)}>Supprimer</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <div style={{ padding: '0.75rem 1.25rem' }}>
+          <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} totalItems={sorted.length} />
+        </div>
+      </div>
+
+      {/* Modal création */}
+      <Modal isOpen={createOpen} onClose={() => setCreateOpen(false)} title="Nouvel administrateur" size="lg"
+        footer={<>
+          <button className="btn btn-secondary" onClick={() => setCreateOpen(false)} disabled={saving}>Annuler</button>
+          <button className="btn btn-primary" onClick={handleCreate} disabled={saving}>{saving ? 'Création...' : 'Créer et envoyer email'}</button>
+        </>}
       >
-        <form onSubmit={handleAdd}>
-          <FormField label="Prénom" name="prenom" value={form.prenom} onChange={setField('prenom')} error={formErrors.prenom} required />
-          <FormField label="Nom" name="nom" value={form.nom} onChange={setField('nom')} error={formErrors.nom} required />
-          <FormField label="Email" name="email" type="email" value={form.email} onChange={setField('email')} error={formErrors.email} required />
-          <FormField label="Mot de passe" name="motDePasse" type="password" value={form.motDePasse} onChange={setField('motDePasse')} error={formErrors.motDePasse} required />
-          <PasswordStrength password={form.motDePasse} />
-          <FormField label="Confirmer mot de passe" name="confirmMdp" type="password" value={form.confirmMdp} onChange={setField('confirmMdp')} error={formErrors.confirmMdp} required />
-          <FormField label="Téléphone" name="telephone" value={form.telephone} onChange={setField('telephone')} />
-          <FormSelect label="Rôle" name="role" value={form.role} onChange={setField('role')} options={ROLE_OPTIONS} />
-          <button type="submit" style={{ display: 'none' }} />
-        </form>
+        <FormField label="Nom" name="nom" value={form.nom} onChange={(e) => setForm((f) => ({ ...f, nom: e.target.value }))} error={formErrors.nom} required />
+        <FormField label="Prénom" name="prenom" value={form.prenom} onChange={(e) => setForm((f) => ({ ...f, prenom: e.target.value }))} error={formErrors.prenom} required />
+        <FormField label="Email" name="email" type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} error={formErrors.email} required />
+
+        {menus.length > 0 && (
+          <div style={{ marginTop: '1.25rem' }}>
+            <div className="form-label" style={{ marginBottom: '0.75rem' }}>Permissions par menu</div>
+            <div className="perm-grid">
+              {menus.map((menu) => (
+                <PermissionRow key={menu.id} menu={menu} perm={permissions[menu.id]} onChange={handlePermChange} />
+              ))}
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal permissions */}
+      <Modal isOpen={permOpen} onClose={() => setPermOpen(false)} title={`Permissions — ${selectedAdmin?.prenom} ${selectedAdmin?.nom}`} size="lg"
+        footer={<>
+          <button className="btn btn-secondary" onClick={() => setPermOpen(false)} disabled={savingPerms}>Annuler</button>
+          <button className="btn btn-primary" onClick={handleSavePerms} disabled={savingPerms}>{savingPerms ? 'Sauvegarde...' : 'Enregistrer'}</button>
+        </>}
+      >
+        <div className="perm-grid">
+          {menus.map((menu) => (
+            <PermissionRow
+              key={menu.id} menu={menu} perm={editPerms[menu.id]}
+              onChange={(menuId, action, value) => setEditPerms((p) => ({ ...p, [menuId]: { ...p[menuId], [action]: value } }))}
+            />
+          ))}
+        </div>
       </Modal>
 
       <ConfirmModal
-        isOpen={!!confirm}
-        onClose={() => setConfirm(null)}
-        onConfirm={handleConfirm}
-        title={confirm?.activate ? 'Activer l\'administrateur' : 'Désactiver l\'administrateur'}
-        message={confirm?.activate ? 'Confirmer l\'activation de cet administrateur ?' : 'Confirmer la désactivation de cet administrateur ?'}
-        confirmLabel={confirm?.activate ? 'Activer' : 'Désactiver'}
-        variant={confirm?.activate ? 'success' : 'danger'}
+        isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete}
+        title="Supprimer l'administrateur"
+        message={`Voulez-vous supprimer ${deleteTarget?.prenom} ${deleteTarget?.nom} ?`}
+        confirmLabel="Supprimer" variant="danger"
       />
     </div>
   );

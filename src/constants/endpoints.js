@@ -1,8 +1,16 @@
 export const ENDPOINTS = {
   AUTH: {
-    LOGIN:    '/auth/connexion',
-    LOGOUT:   '/auth/deconnexion',
-    ME:       '/auth/me',
+    LOGIN:                 '/auth/connexion',
+    LOGOUT:                '/auth/deconnexion',
+    ME:                    '/auth/me',
+    CHANGER_MOT_DE_PASSE:  '/auth/changer-mot-de-passe',
+  },
+  RBAC: {
+    ADMINS:            '/admin/rbac/admins',
+    ADMIN_BY_ID:       (id) => `/admin/rbac/admins/${id}`,
+    ADMIN_PERMISSIONS: (id) => `/admin/rbac/admins/${id}/permissions`,
+    MENUS:             '/admin/rbac/menus',
+    MENU_BY_ID:        (id) => `/admin/rbac/menus/${id}`,
   },
   UTILISATEURS: {
     LISTE:     '/admin/liste-utilisateurs',

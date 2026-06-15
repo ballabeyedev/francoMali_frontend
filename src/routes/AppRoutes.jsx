@@ -6,8 +6,10 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 import AdminLayout from '../components/layout/AdminLayout';
 import ProtectedRoute from './ProtectedRoute';
 import GuestRoute from './GuestRoute';
+import FirstLoginRoute from './FirstLoginRoute';
 
 const LoginPage           = lazy(() => import('../pages/auth/LoginPage'));
+const ChangePasswordPage  = lazy(() => import('../pages/auth/ChangePasswordPage'));
 const DashboardPage       = lazy(() => import('../pages/admin/DashboardPage'));
 const ColisPage           = lazy(() => import('../pages/admin/ColisPage'));
 const ColisEnAttentePage  = lazy(() => import('../pages/admin/ColisEnAttentePage'));
@@ -15,6 +17,7 @@ const ColisLivresPage     = lazy(() => import('../pages/admin/ColisLivresPage'))
 const ColisRecuperesPage  = lazy(() => import('../pages/admin/ColisRecuperesPage'));
 const UtilisateursPage    = lazy(() => import('../pages/admin/UtilisateursPage'));
 const AdminsPage          = lazy(() => import('../pages/admin/AdminsPage'));
+const MenusPage           = lazy(() => import('../pages/admin/MenusPage'));
 const CountriesPage       = lazy(() => import('../pages/admin/CountriesPage'));
 const ShippingPricesPage  = lazy(() => import('../pages/admin/ShippingPricesPage'));
 const ServicePricesPage   = lazy(() => import('../pages/admin/ServicePricesPage'));
@@ -35,6 +38,10 @@ export default function AppRoutes() {
           <Route path={ROUTES.LOGIN} element={<Wrap><LoginPage /></Wrap>} />
         </Route>
 
+        <Route element={<FirstLoginRoute />}>
+          <Route path={ROUTES.CHANGE_PASSWORD} element={<Wrap><ChangePasswordPage /></Wrap>} />
+        </Route>
+
         <Route element={<ProtectedRoute />}>
           <Route element={<AdminLayout />}>
             <Route path={ROUTES.DASHBOARD}        element={<Wrap><DashboardPage /></Wrap>} />
@@ -44,6 +51,7 @@ export default function AppRoutes() {
             <Route path={ROUTES.COLIS_RECUPERES}  element={<Wrap><ColisRecuperesPage /></Wrap>} />
             <Route path={ROUTES.UTILISATEURS}     element={<Wrap><UtilisateursPage /></Wrap>} />
             <Route path={ROUTES.ADMINS}           element={<Wrap><AdminsPage /></Wrap>} />
+            <Route path={ROUTES.MENUS}            element={<Wrap><MenusPage /></Wrap>} />
             <Route path={ROUTES.COUNTRIES}        element={<Wrap><CountriesPage /></Wrap>} />
             <Route path={ROUTES.SHIPPING_PRICES}  element={<Wrap><ShippingPricesPage /></Wrap>} />
             <Route path={ROUTES.SERVICE_PRICES}   element={<Wrap><ServicePricesPage /></Wrap>} />

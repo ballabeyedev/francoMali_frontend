@@ -7,6 +7,8 @@ export const ROUTES = {
   COLIS_RECUPERES:    '/francomaliship/admin/colis/recuperes',
   UTILISATEURS:       '/francomaliship/admin/utilisateurs',
   ADMINS:             '/francomaliship/admin/admins',
+  MENUS:              '/francomaliship/admin/menus',
+  CHANGE_PASSWORD:    '/francomaliship/changer-mot-de-passe',
   COUNTRIES:          '/francomaliship/admin/countries',
   SHIPPING_PRICES:    '/francomaliship/admin/shipping-prices',
   SERVICE_PRICES:     '/francomaliship/admin/service-prices',
