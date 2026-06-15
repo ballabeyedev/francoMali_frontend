@@ -24,6 +24,11 @@ export default defineConfig([
     },
     rules: {
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      // Pattern fetch-on-mount légitime — useCallback wrappant setState appelé depuis useEffect
+      'react-hooks/set-state-in-effect': 'warn',
+      // Contexts sont co-localisés avec leurs Providers dans le même fichier — pattern intentionnel
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
     },
   },
 ])

@@ -1,0 +1,15 @@
+export const ROUTES = {
+  LOGIN:              '/nanei/auth/login',
+  DASHBOARD:          '/nanei/dashboard',
+  COLIS:              '/nanei/admin/colis',
+  COLIS_EN_ATTENTE:   '/nanei/admin/colis/en-attente',
+  COLIS_LIVRES:       '/nanei/admin/colis/livres',
+  COLIS_RECUPERES:    '/nanei/admin/colis/recuperes',
+  UTILISATEURS:       '/nanei/admin/utilisateurs',
+  ADMINS:             '/nanei/admin/admins',
+  MENUS:              '/nanei/admin/menus',
+  CHANGE_PASSWORD:    '/nanei/changer-mot-de-passe',
+  COUNTRIES:          '/nanei/admin/countries',
+  SHIPPING_PRICES:    '/nanei/admin/shipping-prices',
+  SERVICE_PRICES:     '/nanei/admin/service-prices',
+};

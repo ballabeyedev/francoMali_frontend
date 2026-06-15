@@ -1,71 +1,15 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, Outlet } from 'react-router-dom';
+import useAuth from '../hooks/useAuth';
+import LoadingSpinner from '../components/common/LoadingSpinner';
+import { ROUTES } from '../constants/routes';
 
-/**
- * Vérifie :
- * - token
- * - utilisateur
- * - rôle admin
- * - expiration JWT
- */
+export default function ProtectedRoute() {
+  const { user, loading, isFirstLogin } = useAuth();
 
-export default function ProtectedRoute({ children }) {
+  if (loading) return <LoadingSpinner fullPage />;
+  if (!user) return <Navigate to={ROUTES.LOGIN} replace />;
+  if (user.role !== 'Admin' && user.role !== 'SuperAdmin') return <Navigate to={ROUTES.LOGIN} replace />;
+  if (isFirstLogin) return <Navigate to={ROUTES.CHANGE_PASSWORD} replace />;
 
-  let auth = null;
-
-  try {
-    const raw = localStorage.getItem("auth");
-    auth = raw ? JSON.parse(raw) : null;
-  } catch {
-    auth = null;
-  }
-
-  // ❌ pas connecté
-  if (!auth?.token || !auth?.user) {
-    localStorage.removeItem("auth");
-    return <Navigate to="/francomaliship/auth/login" replace />;
-  }
-
-  // ✅ vérifier expiration token JWT
-  try {
-    const payload = JSON.parse(atob(auth.token.split('.')[1]));
-
-    // temps actuel en secondes
-    const now = Date.now() / 1000;
-
-    // token expiré
-    if (payload.exp < now) {
-      localStorage.removeItem("auth");
-
-      return (
-        <Navigate
-          to="/francomaliship/auth/login"
-          replace
-        />
-      );
-    }
-  } catch (error) {
-    localStorage.removeItem("auth");
-
-    return (
-      <Navigate
-        to="/francomaliship/auth/login"
-        replace
-      />
-    );
-  }
-
-  // ❌ pas admin
-  if (auth.user.role !== "Admin") {
-    localStorage.removeItem("auth");
-
-    return (
-      <Navigate
-        to="/francomaliship/auth/login"
-        replace
-      />
-    );
-  }
-
-  // ✅ accès autorisé
-  return children;
+  return <Outlet />;
 }

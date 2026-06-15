@@ -1,0 +1,15 @@
+import api from './axiosInstance';
+import { ENDPOINTS } from '../constants/endpoints';
+const E = ENDPOINTS.COLIS;
+export const getColis             = ()    => api.get(E.LISTE);
+export const getNombreColis       = ()    => api.get(E.NOMBRE);
+export const getColisEnAttente    = ()    => api.get(E.EN_ATTENTE);
+export const getNombreEnAttente   = ()    => api.get(E.NOMBRE_EN_ATTENTE);
+export const getColisLivres       = ()    => api.get(E.LIVRES);
+export const getNombreLivres      = ()    => api.get(E.NOMBRE_LIVRES);
+export const getColisRecuperes    = ()    => api.get(E.RECUPERES);
+export const getNombreRecuperes   = ()    => api.get(E.NOMBRE_RECUPERES);
+export const rechercherColis      = (ref) => api.get(E.RECHERCHE(ref));
+export const changerEnAttente     = (id)  => api.put(E.EN_ATTENTE_STATUT(id));
+export const changerEnLivre       = (id)  => api.put(E.LIVRE_STATUT(id));
+export const changerEnRecupere    = (id)  => api.put(E.RECUPERE_STATUT(id));

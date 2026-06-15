@@ -1,278 +1,188 @@
-import { useState, useEffect } from 'react';
-import servicePriceAPI from '../../api/servicePrice.api';
-import countryAPI from '../../api/country.api';
-import './AdminPages.css';
+import { useEffect, useMemo, useState } from 'react';
+import useTitle from '../../hooks/useTitle';
+import SkeletonTable from '../../components/common/SkeletonTable';
+import ErrorState from '../../components/common/ErrorState';
+import EmptyState from '../../components/common/EmptyState';
+import Pagination from '../../components/common/Pagination';
+import Badge from '../../components/common/Badge';
+import Modal from '../../components/modals/Modal';
+import ConfirmModal from '../../components/modals/ConfirmModal';
+import FormField from '../../components/forms/FormField';
+import FormSelect from '../../components/forms/FormSelect';
+import { toast } from '../../utils/toast';
+import { getServicePrices, createServicePrice, updateServicePrice, deleteServicePrice } from '../../api/servicePrices.api';
+import { getCountries } from '../../api/countries.api';
+import { formatPrice } from '../../utils/formatters';
+
+const PAGE_SIZE = 15;
+const EMPTY = { countryId: '', serviceType: 'récupération', price: '' };
+const SERVICE_OPTIONS = [
+  { value: 'récupération', label: 'Récupération' },
+  { value: 'livraison', label: 'Livraison' },
+];
+const extract = (res) => res.data?.data ?? res.data?.servicePrices ?? res.data ?? [];
 
 export default function ServicePricesPage() {
-  const [prices, setPrices] = useState([]);
+  useTitle('Prix services');
+  const [prices, setPrices]       = useState([]);
   const [countries, setCountries] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [filters, setFilters] = useState({
-    countryId: '',
-    serviceType: '',
-  });
-  const [formData, setFormData] = useState({
-    countryId: '',
-    serviceType: 'récupération',
-    price: '',
-  });
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState(null);
+  const [page, setPage]           = useState(1);
+  const [showForm, setShowForm]   = useState(false);
+  const [editId, setEditId]       = useState(null);
+  const [form, setForm]           = useState(EMPTY);
+  const [formErrors, setFormErrors] = useState({});
+  const [saving, setSaving]       = useState(false);
+  const [confirmDel, setConfirmDel] = useState(null);
 
-  // Fetch countries and prices
-  const fetchCountries = async () => {
-    try {
-      const response = await countryAPI.getAllCountries();
-      setCountries(response.data || []);
-    } catch (error) {
-      console.error('Error fetching countries:', error);
-    }
-  };
-
-  const fetchPrices = async () => {
+  const load = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const response = await servicePriceAPI.getAllServicePrices(filters);
-      setPrices(response.data || []);
-    } catch (error) {
-      console.error('Error fetching prices:', error);
-      alert('Erreur lors de la récupération des prix');
+      const [pRes, cRes] = await Promise.all([getServicePrices(), getCountries()]);
+      const pData = extract(pRes);
+      const cData = cRes.data?.data ?? cRes.data?.countries ?? cRes.data ?? [];
+      setPrices(Array.isArray(pData) ? pData : []);
+      setCountries(Array.isArray(cData) ? cData : []);
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Erreur lors du chargement');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchCountries();
-  }, []);
+  useEffect(() => { load(); }, []);
 
-  useEffect(() => {
-    fetchPrices();
-  }, [filters]);
+  const countryName = (id) => {
+    const c = countries.find((x) => (x.id || x._id) === id);
+    return c ? c.name : 'N/A';
+  };
+  const countryOptions = useMemo(
+    () => countries.map((c) => ({ value: c.id || c._id, label: c.name })),
+    [countries]
+  );
 
-  // Handle form submit
+  const totalPages = Math.ceil(prices.length / PAGE_SIZE) || 1;
+  const pageItems = useMemo(
+    () => prices.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [prices, page]
+  );
+
+  const setField = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const openCreate = () => { setEditId(null); setForm(EMPTY); setFormErrors({}); setShowForm(true); };
+  const openEdit = (p) => {
+    setEditId(p.id || p._id);
+    setForm({ countryId: p.countryId || '', serviceType: p.serviceType || 'récupération', price: String(p.price ?? '') });
+    setFormErrors({});
+    setShowForm(true);
+  };
+
+  const validate = () => {
+    const errs = {};
+    if (!form.countryId) errs.countryId = 'Pays requis';
+    if (!(parseFloat(form.price) >= 0)) errs.price = 'Prix invalide';
+    setFormErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!formData.countryId || !formData.price) {
-      alert('Tous les champs sont obligatoires');
-      return;
-    }
-
+    if (!validate()) return;
+    setSaving(true);
+    const payload = { countryId: form.countryId, serviceType: form.serviceType, price: parseFloat(form.price) };
     try {
-      const data = {
-        countryId: formData.countryId,
-        serviceType: formData.serviceType,
-        price: parseFloat(formData.price),
-      };
-
-      if (editingId) {
-        await servicePriceAPI.updateServicePrice(editingId, data);
-        alert('Prix mis à jour avec succès');
-      } else {
-        await servicePriceAPI.createServicePrice(data);
-        alert('Prix créé avec succès');
-      }
-      resetForm();
-      fetchPrices();
-    } catch (error) {
-      console.error('Error saving price:', error);
-      alert(error.message || 'Erreur lors de l\'enregistrement');
+      if (editId) { await updateServicePrice(editId, payload); toast.success('Prix mis à jour'); }
+      else { await createServicePrice(payload); toast.success('Prix créé'); }
+      setShowForm(false);
+      load();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Enregistrement impossible');
+    } finally {
+      setSaving(false);
     }
   };
 
-  // Handle edit
-  const handleEdit = (price) => {
-    setEditingId(price.id);
-    setFormData({
-      countryId: price.countryId,
-      serviceType: price.serviceType,
-      price: price.price,
-    });
-    setShowModal(true);
-  };
-
-  // Handle delete
-  const handleDelete = async (id) => {
-    if (confirm('Êtes-vous sûr de vouloir supprimer ce prix ?')) {
-      try {
-        await servicePriceAPI.deleteServicePrice(id);
-        alert('Prix supprimé avec succès');
-        fetchPrices();
-      } catch (error) {
-        console.error('Error deleting price:', error);
-        alert('Erreur lors de la suppression');
-      }
+  const handleDelete = async () => {
+    if (!confirmDel) return;
+    try {
+      await deleteServicePrice(confirmDel);
+      toast.success('Prix supprimé');
+      setConfirmDel(null);
+      load();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Suppression impossible');
+      setConfirmDel(null);
     }
-  };
-
-  // Reset form
-  const resetForm = () => {
-    setFormData({
-      countryId: '',
-      serviceType: 'récupération',
-      price: '',
-    });
-    setEditingId(null);
-    setShowModal(false);
-  };
-
-  // Get country name by ID
-  const getCountryName = (countryId) => {
-    const country = countries.find(c => c.id === countryId);
-    return country ? country.name : 'N/A';
   };
 
   return (
-    <div className="admin-page">
-      <div className="admin-header">
-        <h1>Gestion des Prix de Services</h1>
-        <button className="btn-primary" onClick={() => setShowModal(true)}>
-          Ajouter un Prix
-        </button>
-      </div>
-
-      <div className="filters">
-        <select
-          value={filters.countryId}
-          onChange={(e) => setFilters({ ...filters, countryId: e.target.value })}
-        >
-          <option value="">Tous les pays</option>
-          {countries.map(country => (
-            <option key={country.id} value={country.id}>
-              {country.name}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={filters.serviceType}
-          onChange={(e) => setFilters({ ...filters, serviceType: e.target.value })}
-        >
-          <option value="">Tous les services</option>
-          <option value="récupération">Récupération</option>
-          <option value="livraison">Livraison</option>
-        </select>
-      </div>
-
-      {loading ? (
-        <div className="loading">Chargement...</div>
-      ) : (
-        <div className="admin-table">
-          <table>
-            <thead>
-              <tr>
-                <th>Pays</th>
-                <th>Service</th>
-                <th>Prix (€)</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {prices.map((price) => (
-                <tr key={price.id}>
-                  <td>{getCountryName(price.countryId)}</td>
-                  <td>{price.serviceType}</td>
-                  <td>{price.price}</td>
-                  <td className="actions">
-                    <button
-                      className="btn-edit"
-                      onClick={() => handleEdit(price)}
-                    >
-                      Modifier
-                    </button>
-                    <button
-                      className="btn-delete"
-                      onClick={() => handleDelete(price.id)}
-                    >
-                      Supprimer
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {prices.length === 0 && (
-            <div className="no-data">Aucun prix trouvé</div>
-          )}
+    <div>
+      <div className="card">
+        <div className="card-header">
+          <div className="card-title">Prix services ({prices.length})</div>
+          <button className="btn btn-primary" onClick={openCreate}>+ Ajouter un prix</button>
         </div>
-      )}
 
-      {/* Modal */}
-      {showModal && (
-        <div className="modal-overlay" onClick={() => resetForm()}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{editingId ? 'Modifier le Prix' : 'Ajouter un Prix'}</h2>
-              <button className="close-btn" onClick={() => resetForm()}>×</button>
-            </div>
-
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label>Pays *</label>
-                <select
-                  value={formData.countryId}
-                  onChange={(e) => setFormData({ ...formData, countryId: e.target.value })}
-                >
-                  <option value="">Sélectionner un pays</option>
-                  {countries.map(country => (
-                    <option key={country.id} value={country.id}>
-                      {country.name}
-                    </option>
+        {loading ? <SkeletonTable rows={8} cols={4} />
+          : error ? <ErrorState message={error} onRetry={load} />
+          : prices.length === 0 ? <EmptyState message="Aucun prix trouvé" />
+          : (
+            <div className="table-wrap">
+              <table className="data-table">
+                <thead>
+                  <tr><th>Pays</th><th>Service</th><th>Prix</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                  {pageItems.map((p) => (
+                    <tr key={p.id || p._id}>
+                      <td className="td-bold">{countryName(p.countryId)}</td>
+                      <td><Badge variant={(p.serviceType || '').includes('livr') ? 'info' : 'default'}>{p.serviceType}</Badge></td>
+                      <td>{formatPrice(p.price)}</td>
+                      <td>
+                        <div className="table-actions">
+                          <button className="btn btn-secondary btn-sm" onClick={() => openEdit(p)}>Modifier</button>
+                          <button className="btn btn-danger btn-sm" onClick={() => setConfirmDel(p.id || p._id)}>Supprimer</button>
+                        </div>
+                      </td>
+                    </tr>
                   ))}
-                </select>
-              </div>
+                </tbody>
+              </table>
+            </div>
+          )}
+        <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+      </div>
 
-              <div className="form-group">
-                <label>Type de Service *</label>
-                <div className="radio-group">
-                  <label>
-                    <input
-                      type="radio"
-                      name="serviceType"
-                      value="récupération"
-                      checked={formData.serviceType === 'récupération'}
-                      onChange={(e) => setFormData({ ...formData, serviceType: e.target.value })}
-                    />
-                    Récupération
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      name="serviceType"
-                      value="livraison"
-                      checked={formData.serviceType === 'livraison'}
-                      onChange={(e) => setFormData({ ...formData, serviceType: e.target.value })}
-                    />
-                    Livraison
-                  </label>
-                </div>
-              </div>
+      <Modal
+        isOpen={showForm}
+        onClose={() => setShowForm(false)}
+        title={editId ? 'Modifier le prix' : 'Ajouter un prix'}
+        footer={
+          <>
+            <button className="btn btn-secondary" onClick={() => setShowForm(false)}>Annuler</button>
+            <button className="btn btn-primary" onClick={handleSubmit} disabled={saving}>{saving ? 'Enregistrement…' : (editId ? 'Mettre à jour' : 'Créer')}</button>
+          </>
+        }
+      >
+        <form onSubmit={handleSubmit}>
+          <FormSelect label="Pays" name="countryId" value={form.countryId} onChange={setField('countryId')} options={countryOptions} placeholder="Sélectionner un pays" error={formErrors.countryId} required />
+          <FormSelect label="Type de service" name="serviceType" value={form.serviceType} onChange={setField('serviceType')} options={SERVICE_OPTIONS} />
+          <FormField label="Prix (€)" name="price" type="number" step="0.01" value={form.price} onChange={setField('price')} error={formErrors.price} required />
+          <button type="submit" style={{ display: 'none' }} />
+        </form>
+      </Modal>
 
-              <div className="form-group">
-                <label>Prix (€) *</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  placeholder="Ex: 5"
-                />
-              </div>
-
-              <div className="form-actions">
-                <button type="submit" className="btn-primary">
-                  {editingId ? 'Mettre à jour' : 'Créer'}
-                </button>
-                <button type="button" className="btn-secondary" onClick={() => resetForm()}>
-                  Annuler
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        isOpen={!!confirmDel}
+        onClose={() => setConfirmDel(null)}
+        onConfirm={handleDelete}
+        title="Supprimer le prix"
+        message="Êtes-vous sûr de vouloir supprimer ce prix de service ?"
+        confirmLabel="Supprimer"
+        variant="danger"
+      />
     </div>
   );
 }
