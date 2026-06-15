@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '../../utils/toast';
+import { logger } from '../../utils/logger';
 import useAuth from '../../hooks/useAuth';
 import { ROUTES } from '../../constants/routes';
 import { LOGIN_MAX_ATTEMPTS, LOGIN_FREEZE_SEC } from '../../constants/ui';
@@ -22,19 +23,24 @@ export default function LoginPage() {
     e.preventDefault();
     if (isFrozen) return;
     setLoading(true);
+    logger.info('Auth', 'Tentative de connexion', { identifiant: email });
     try {
       const user = await login(email, motDePasse);
+      logger.info('Auth', 'Connexion réussie', { id: user?.id, role: user?.role });
       toast.success('Connexion réussie', `Bienvenue, ${user.prenom || user.nom || 'Admin'} !`);
       navigate(ROUTES.DASHBOARD, { replace: true });
     } catch (err) {
+      const status  = err?.response?.status;
+      const msg     = err?.response?.data?.message || err?.message || 'Erreur réseau';
+      const detail  = err?.response?.data;
+      logger.error('Auth', `Échec connexion [${status}]`, { msg, detail, url: err?.config?.url, baseURL: err?.config?.baseURL });
       const next = attempts + 1;
       setAttempts(next);
       if (next >= LOGIN_MAX_ATTEMPTS) {
         setFrozen(Date.now() + LOGIN_FREEZE_SEC * 1000);
         toast.error('Compte temporairement bloqué', `Trop de tentatives. Réessayez dans ${LOGIN_FREEZE_SEC} secondes.`);
       } else {
-        const msg = err?.response?.data?.message || 'Identifiants incorrects';
-        toast.error('Échec de connexion', msg);
+        toast.error(`Échec [${status || 'NET'}]`, msg);
       }
     } finally {
       setLoading(false);

@@ -2,6 +2,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { PermissionsProvider } from './contexts/PermissionsContext';
 import AppRoutes from './routes/AppRoutes';
 import ToastProvider from './components/common/ToastProvider';
+import DebugPanel from './components/common/DebugPanel';
 
 export default function App() {
   return (
@@ -11,6 +12,7 @@ export default function App() {
           <AppRoutes />
         </PermissionsProvider>
       </AuthProvider>
+      <DebugPanel />
     </ToastProvider>
   );
 }

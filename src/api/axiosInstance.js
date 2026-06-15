@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { clearSession } from '../utils/storage';
+import { logger } from '../utils/logger';
 
 if (!import.meta.env.VITE_API_BASE_URL) {
   throw new Error('[nanei] VITE_API_BASE_URL manquante — build invalide');
@@ -20,6 +21,11 @@ instance.interceptors.request.use((config) => {
   if (csrfToken && mutativeMethods.includes(config.method?.toLowerCase())) {
     config.headers['X-CSRF-Token'] = csrfToken;
   }
+  config._t0 = Date.now();
+  logger.info('API:req', `${config.method?.toUpperCase()} ${config.url}`, {
+    body: config.data,
+    baseURL: config.baseURL,
+  });
   return config;
 });
 
@@ -32,8 +38,20 @@ const processQueue = (error) => {
 };
 
 instance.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    const ms = Date.now() - (res.config._t0 || 0);
+    logger.info('API:res', `${res.status} ${res.config.method?.toUpperCase()} ${res.config.url} (${ms}ms)`, res.data);
+    return res;
+  },
   async (error) => {
+    const cfg = error.config || {};
+    const ms = Date.now() - (cfg._t0 || 0);
+    logger.error('API:err', `${error.response?.status ?? 'NET'} ${cfg.method?.toUpperCase()} ${cfg.url} (${ms}ms)`, {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+      baseURL: cfg.baseURL,
+    });
     const original = error.config;
     if (error.code === 'ECONNABORTED') {
       return Promise.reject({ ...error, userMessage: 'Le serveur met trop de temps à répondre. Réessayez.' });
