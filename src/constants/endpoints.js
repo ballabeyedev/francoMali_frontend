@@ -1,7 +1,7 @@
 export const ENDPOINTS = {
   AUTH: {
-    LOGIN:                 '/auth/connexion',
-    LOGOUT:                '/auth/deconnexion',
+    LOGIN:                 '/auth/login',
+    LOGOUT:                '/auth/logout',
     ME:                    '/auth/me',
     CHANGER_MOT_DE_PASSE:  '/auth/changer-mot-de-passe',
   },
