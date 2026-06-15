@@ -34,12 +34,8 @@ export function AuthProvider({ children }) {
   const login = useCallback(async (identifiant, motDePasse) => {
     const res = await loginApi(identifiant, motDePasse);
 
-    logger.info('Auth:raw', 'res.data reçu', {
-      keys: res.data ? Object.keys(res.data) : null,
-      hasUtilisateur: !!res.data?.utilisateur,
-      role: res.data?.utilisateur?.role,
-      status: res.status,
-    });
+    // eslint-disable-next-line no-console
+    console.log('🔍 AUTH RAW RESPONSE:', JSON.stringify(res.data));
 
     const token = res.data?.accessToken;
     if (token) setToken(token);
