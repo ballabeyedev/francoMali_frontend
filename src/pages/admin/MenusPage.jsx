@@ -167,7 +167,7 @@ export default function MenusPage() {
       >
         <FormField label="Nom" name="name" value={form.name} onChange={handleChange} error={formErrors.name} required placeholder="Ex: Utilisateurs" />
         <FormField label="Code" name="code" value={form.code} onChange={handleChange} error={formErrors.code} required placeholder="Ex: UTILISATEURS" />
-        <FormField label="Chemin (route)" name="path" value={form.path} onChange={handleChange} error={formErrors.path} required placeholder="Ex: /francomaliship/admin/utilisateurs" />
+        <FormField label="Chemin (route)" name="path" value={form.path} onChange={handleChange} error={formErrors.path} required placeholder="Ex: /nanei/admin/utilisateurs" />
         <FormField label="Icône (optionnel)" name="icon" value={form.icon} onChange={handleChange} placeholder="Ex: users" />
         <FormField label="Ordre d'affichage" name="ordre" type="number" value={form.ordre} onChange={handleChange} placeholder="0" />
       </Modal>

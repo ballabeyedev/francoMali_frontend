@@ -5,7 +5,7 @@ import useTitle from '../../hooks/useTitle';
 describe('useTitle', () => {
   it('sets document title with suffix', () => {
     renderHook(() => useTitle('Dashboard'));
-    expect(document.title).toBe('Dashboard — FrancoMaliShip Admin');
+    expect(document.title).toBe('Dashboard — nanei Admin');
   });
 
   it('restores previous title on unmount', () => {
@@ -17,6 +17,6 @@ describe('useTitle', () => {
 
   it('sets default title when no argument', () => {
     renderHook(() => useTitle(null));
-    expect(document.title).toBe('FrancoMaliShip Admin');
+    expect(document.title).toBe('nanei Admin');
   });
 });

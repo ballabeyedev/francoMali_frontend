@@ -26,7 +26,7 @@ export default function AdminLayout() {
   const { logout } = useAuth();
   const { pathname } = useLocation();
   useInactivityLogout(logout);
-  const { title = 'FrancoMaliShip', sub } = PAGE_TITLES[pathname] || {};
+  const { title = 'Nanei', sub } = PAGE_TITLES[pathname] || {};
 
   return (
     <div className={`admin-shell${isOpen ? '' : ' sidebar-collapsed'}`}>

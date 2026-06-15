@@ -52,8 +52,8 @@ export default function ChangePasswordPage() {
       <div className="login-card">
         <div className="login-logo-row">
           <div>
-            <div className="login-brand-name">FrancoMaliShip</div>
-            <div className="login-brand-sub">Administration</div>
+            <div className="login-brand-name">Nanei</div>
+            <div className="login-brand-sub" style={{ color: '#F97316', fontWeight: 600 }}>Administration</div>
           </div>
         </div>
         <div className="login-divider" />

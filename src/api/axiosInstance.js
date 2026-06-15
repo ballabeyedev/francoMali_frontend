@@ -2,7 +2,7 @@ import axios from 'axios';
 import { clearSession } from '../utils/storage';
 
 if (!import.meta.env.VITE_API_BASE_URL) {
-  throw new Error('[FrancoMaliShip] VITE_API_BASE_URL manquante — build invalide');
+  throw new Error('[nanei] VITE_API_BASE_URL manquante — build invalide');
 }
 
 const instance = axios.create({
@@ -53,7 +53,7 @@ instance.interceptors.response.use(
       } catch {
         processQueue(new Error('Session expirée'));
         clearSession();
-        window.location.href = '/francomaliship/login';
+        window.location.href = '/nanei/login';
         return Promise.reject(error);
       } finally {
         isRefreshing = false;

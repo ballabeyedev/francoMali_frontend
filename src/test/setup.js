@@ -3,7 +3,7 @@ import { vi } from 'vitest';
 
 // Mock window.location
 Object.defineProperty(window, 'location', {
-  value: { href: '', pathname: '/francomaliship/login', assign: vi.fn() },
+  value: { href: '', pathname: '/nanei/login', assign: vi.fn() },
   writable: true,
 });
 

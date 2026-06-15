@@ -31,8 +31,8 @@ export default function AppRoutes() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to={ROUTES.LOGIN} replace />} />
-        <Route path="/francomaliship" element={<Navigate to={ROUTES.LOGIN} replace />} />
-        <Route path="/francomaliship/auth" element={<Navigate to={ROUTES.LOGIN} replace />} />
+        <Route path="/nanei" element={<Navigate to={ROUTES.LOGIN} replace />} />
+        <Route path="/nanei/auth" element={<Navigate to={ROUTES.LOGIN} replace />} />
 
         <Route element={<GuestRoute />}>
           <Route path={ROUTES.LOGIN} element={<Wrap><LoginPage /></Wrap>} />

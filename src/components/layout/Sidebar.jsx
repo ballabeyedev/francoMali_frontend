@@ -63,7 +63,7 @@ const Sidebar = memo(function Sidebar({ isOpen, setIsOpen, mobileOpen, onClose }
       <aside className={`sidebar${isOpen === false ? ' closed' : ''}${mobileOpen ? ' mobile-open' : ''}`} aria-label="Navigation principale">
         <div className="sidebar-top">
           <div className="sidebar-brand">
-            <div className="sidebar-brand-name">FrancoMaliShip</div>
+            <div className="sidebar-brand-name">Nanei</div>
             {isOpen !== false && <div className="sidebar-brand-sub">Administration</div>}
           </div>
           {setIsOpen && (
