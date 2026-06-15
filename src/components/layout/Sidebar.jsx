@@ -42,6 +42,7 @@ export default function Sidebar({ isOpen, setIsOpen, mobileOpen }) {
             <NavLink key={item.to} to={item.to} end={item.end}
               className={({ isActive }) => `sidebar-item${isActive ? ' active' : ''}`}
               title={!isOpen ? item.label : undefined}
+              aria-current={({ isActive }) => isActive ? 'page' : undefined}
             >
               <span className="sidebar-item-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>{item.icon}</svg>

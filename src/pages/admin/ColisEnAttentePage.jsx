@@ -1,32 +1,33 @@
 import { useEffect, useMemo, useState } from 'react';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
 import ErrorState from '../../components/common/ErrorState';
 import EmptyState from '../../components/common/EmptyState';
 import Pagination from '../../components/common/Pagination';
+import SkeletonTable from '../../components/common/SkeletonTable';
 import ConfirmModal from '../../components/modals/ConfirmModal';
 import { toast } from '../../utils/toast';
+import useTitle from '../../hooks/useTitle';
 import { getColisEnAttente, changerEnLivre, changerEnRecupere } from '../../api/colis.api';
 import { formatDate, formatWeight, truncate } from '../../utils/formatters';
-import { typeLabel } from './colisHelpers';
-
-const PAGE_SIZE = 15;
+import { typeLabel } from '../../utils/colisHelpers.jsx';
+import { extractList, extractError } from '../../utils/apiHelpers';
+import { PAGE_SIZE } from '../../constants/ui';
 
 export default function ColisEnAttentePage() {
+  useTitle('Colis en attente');
   const [colis, setColis]     = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
   const [page, setPage]       = useState(1);
-  const [confirm, setConfirm] = useState(null); // { id, action, label }
+  const [confirm, setConfirm] = useState(null);
 
   const load = async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await getColisEnAttente();
-      const data = res.data?.colis ?? res.data?.data ?? res.data ?? [];
-      setColis(Array.isArray(data) ? data : []);
+      setColis(extractList(res, 'colis', 'data'));
     } catch (err) {
-      setError(err?.response?.data?.message || 'Erreur lors du chargement');
+      setError(extractError(err));
     } finally {
       setLoading(false);
     }
@@ -48,7 +49,7 @@ export default function ColisEnAttentePage() {
       setConfirm(null);
       load();
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Erreur lors du changement de statut');
+      toast.error(extractError(err));
       setConfirm(null);
     }
   };
@@ -60,7 +61,7 @@ export default function ColisEnAttentePage() {
           <div className="card-title">Colis en attente ({colis.length})</div>
         </div>
 
-        {loading ? <LoadingSpinner />
+        {loading ? <SkeletonTable rows={8} cols={8} />
           : error ? <ErrorState message={error} onRetry={load} />
           : colis.length === 0 ? <EmptyState message="Aucun colis en attente" />
           : (
@@ -97,7 +98,7 @@ export default function ColisEnAttentePage() {
               </table>
             </div>
           )}
-        <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+        <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} totalItems={colis.length} />
       </div>
 
       <ConfirmModal

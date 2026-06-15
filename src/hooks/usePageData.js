@@ -1,17 +1,20 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+
 export default function usePageData(fetchFn, deps = []) {
-  const [data, setData]       = useState(null);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState(null);
+  const [error, setError] = useState(null);
+  const fetchFnRef = useRef(fetchFn);
+  useEffect(() => { fetchFnRef.current = fetchFn; });
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetchFn();
-      setData(res.data);
-    } catch (err) {
-      setError(err?.response?.data?.message || 'Erreur lors du chargement');
+      const res = await fetchFnRef.current();
+      setData(res);
+    } catch (e) {
+      setError(e?.response?.data?.message ?? e?.userMessage ?? 'Erreur lors du chargement');
     } finally {
       setLoading(false);
     }

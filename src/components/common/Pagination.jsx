@@ -9,18 +9,25 @@ function getPages(current, total) {
   pages.push(total);
   return pages;
 }
-export default memo(function Pagination({ currentPage, totalPages, onPageChange }) {
+export default memo(function Pagination({ currentPage, totalPages, onPageChange, totalItems }) {
   const pages = useMemo(() => getPages(currentPage, totalPages), [currentPage, totalPages]);
   if (totalPages <= 1) return null;
   return (
-    <nav className="pagination" aria-label="Pagination">
-      <button className="pagination-btn" disabled={currentPage === 1} onClick={() => onPageChange(currentPage - 1)}>‹</button>
-      {pages.map((p, i) =>
-        p === '…'
-          ? <span key={`e${i}`} className="pagination-ellipsis">…</span>
-          : <button key={p} className={`pagination-btn${currentPage === p ? ' active' : ''}`} onClick={() => onPageChange(p)} aria-current={currentPage === p ? 'page' : undefined}>{p}</button>
+    <div>
+      <nav className="pagination" aria-label="Pagination">
+        <button className="pagination-btn" disabled={currentPage === 1} onClick={() => onPageChange(currentPage - 1)}>‹</button>
+        {pages.map((p, i) =>
+          p === '…'
+            ? <span key={`e${i}`} className="pagination-ellipsis">…</span>
+            : <button key={p} className={`pagination-btn${currentPage === p ? ' active' : ''}`} onClick={() => onPageChange(p)} aria-current={currentPage === p ? 'page' : undefined}>{p}</button>
+        )}
+        <button className="pagination-btn" disabled={currentPage === totalPages} onClick={() => onPageChange(currentPage + 1)}>›</button>
+      </nav>
+      {totalItems != null && (
+        <div className="pagination-info" aria-live="polite">
+          Page {currentPage} de {totalPages} — {totalItems} résultat{totalItems > 1 ? 's' : ''}
+        </div>
       )}
-      <button className="pagination-btn" disabled={currentPage === totalPages} onClick={() => onPageChange(currentPage + 1)}>›</button>
-    </nav>
+    </div>
   );
 });

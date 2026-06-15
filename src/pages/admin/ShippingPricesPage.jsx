@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import useTitle from '../../hooks/useTitle';
+import SkeletonTable from '../../components/common/SkeletonTable';
 import ErrorState from '../../components/common/ErrorState';
 import EmptyState from '../../components/common/EmptyState';
 import Pagination from '../../components/common/Pagination';
@@ -22,6 +23,7 @@ const TYPE_OPTIONS = [
 const extract = (res) => res.data?.data ?? res.data?.shippingPrices ?? res.data ?? [];
 
 export default function ShippingPricesPage() {
+  useTitle('Prix de fret');
   const [prices, setPrices]       = useState([]);
   const [countries, setCountries] = useState([]);
   const [loading, setLoading]     = useState(true);
@@ -133,7 +135,7 @@ export default function ShippingPricesPage() {
           <button className="btn btn-primary" onClick={openCreate}>+ Ajouter un prix</button>
         </div>
 
-        {loading ? <LoadingSpinner />
+        {loading ? <SkeletonTable rows={8} cols={6} />
           : error ? <ErrorState message={error} onRetry={load} />
           : prices.length === 0 ? <EmptyState message="Aucun prix trouvé" />
           : (

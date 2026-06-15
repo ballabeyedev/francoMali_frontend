@@ -3,9 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from '../../utils/toast';
 import useAuth from '../../hooks/useAuth';
 import { ROUTES } from '../../constants/routes';
-
-const MAX_ATTEMPTS = 3;
-const FREEZE_SEC   = 30;
+import { LOGIN_MAX_ATTEMPTS, LOGIN_FREEZE_SEC } from '../../constants/ui';
 
 export default function LoginPage() {
   const [email, setEmail]           = useState('');
@@ -30,9 +28,9 @@ export default function LoginPage() {
     } catch (err) {
       const next = attempts + 1;
       setAttempts(next);
-      if (next >= MAX_ATTEMPTS) {
-        setFrozen(Date.now() + FREEZE_SEC * 1000);
-        toast.error(`Trop de tentatives. Patientez ${FREEZE_SEC}s.`);
+      if (next >= LOGIN_MAX_ATTEMPTS) {
+        setFrozen(Date.now() + LOGIN_FREEZE_SEC * 1000);
+        toast.error(`Trop de tentatives. Patientez ${LOGIN_FREEZE_SEC}s.`);
       } else {
         const msg = err?.response?.data?.message || 'Identifiants incorrects';
         toast.error(msg);

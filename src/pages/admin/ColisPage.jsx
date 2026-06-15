@@ -1,23 +1,27 @@
 import { useEffect, useMemo, useState } from 'react';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
 import ErrorState from '../../components/common/ErrorState';
 import EmptyState from '../../components/common/EmptyState';
 import SearchInput from '../../components/common/SearchInput';
 import Pagination from '../../components/common/Pagination';
+import SkeletonTable from '../../components/common/SkeletonTable';
 import useDebounce from '../../hooks/useDebounce';
+import useTitle from '../../hooks/useTitle';
+import useSort from '../../hooks/useSort';
 import { getColis, rechercherColis } from '../../api/colis.api';
 import { formatDate, formatWeight, truncate } from '../../utils/formatters';
-import { statutBadge, typeLabel } from './colisHelpers';
-
-const PAGE_SIZE = 15;
+import { statutBadge, typeLabel } from '../../utils/colisHelpers.jsx';
+import { extractList, extractError } from '../../utils/apiHelpers';
+import { PAGE_SIZE } from '../../constants/ui';
 
 export default function ColisPage() {
+  useTitle('Tous les colis');
   const [colis, setColis]     = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
   const [search, setSearch]   = useState('');
   const [page, setPage]       = useState(1);
   const debounced = useDebounce(search, 300);
+  const { sorted, toggle, sortIcon } = useSort(colis, null);
 
   const load = async () => {
     setLoading(true);
@@ -26,10 +30,9 @@ export default function ColisPage() {
       const res = debounced.trim()
         ? await rechercherColis(debounced.trim())
         : await getColis();
-      const data = res.data?.colis ?? res.data?.data ?? res.data ?? [];
-      setColis(Array.isArray(data) ? data : [data].filter(Boolean));
+      setColis(extractList(res, 'colis', 'data'));
     } catch (err) {
-      setError(err?.response?.data?.message || 'Erreur lors du chargement des colis');
+      setError(extractError(err));
     } finally {
       setLoading(false);
     }
@@ -38,10 +41,10 @@ export default function ColisPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); setPage(1); }, [debounced]);
 
-  const totalPages = Math.ceil(colis.length / PAGE_SIZE) || 1;
+  const totalPages = Math.ceil((sorted?.length ?? 0) / PAGE_SIZE) || 1;
   const pageItems = useMemo(
-    () => colis.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
-    [colis, page]
+    () => (sorted ?? []).slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [sorted, page]
   );
 
   return (
@@ -52,16 +55,22 @@ export default function ColisPage() {
           <SearchInput value={search} onChange={setSearch} placeholder="Rechercher par référence…" />
         </div>
 
-        {loading ? <LoadingSpinner />
+        {loading ? <SkeletonTable rows={8} cols={8} />
           : error ? <ErrorState message={error} onRetry={load} />
-          : colis.length === 0 ? <EmptyState message="Aucun colis trouvé" />
+          : colis.length === 0 ? <EmptyState message="Aucun colis trouvé" searchTerm={search} />
           : (
             <div className="table-wrap">
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Référence</th><th>Expéditeur</th><th>Destinataire</th>
-                    <th>Pays</th><th>Poids</th><th>Type</th><th>Statut</th><th>Date</th>
+                    <th onClick={() => toggle('reference')} className="sortable-th" tabIndex={0} role="columnheader" aria-sort="none">
+                      Référence <span className="sort-icon" aria-hidden="true">{sortIcon('reference')}</span>
+                    </th>
+                    <th>Expéditeur</th><th>Destinataire</th>
+                    <th>Pays</th><th>Poids</th><th>Type</th><th>Statut</th>
+                    <th onClick={() => toggle('createdAt')} className="sortable-th" tabIndex={0} role="columnheader">
+                      Date <span className="sort-icon" aria-hidden="true">{sortIcon('createdAt')}</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -81,7 +90,7 @@ export default function ColisPage() {
               </table>
             </div>
           )}
-        <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+        <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} totalItems={colis.length} />
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import Badge from '../../components/common/Badge';
+import Badge from '../components/common/Badge';
 
 export const statutBadge = (statut) => {
   const s = (statut || '').toLowerCase();

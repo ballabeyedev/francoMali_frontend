@@ -1,42 +1,62 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import StatCard from '../../components/common/StatCard';
+import useTitle from '../../hooks/useTitle';
 import { getNombreColis, getNombreEnAttente, getNombreLivres, getNombreRecuperes } from '../../api/colis.api';
 import { getNombreUtilisateurs } from '../../api/utilisateurs.api';
 import { getNombreAdmins } from '../../api/admins.api';
 
-const pick = (res) => res.data?.nombre ?? res.data?.count ?? res.data?.total ?? '—';
+const pick = (r) => r.data?.nombre ?? r.data?.count ?? r.data?.total ?? '--';
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState({});
+  useTitle('Tableau de bord');
+  const [stats, setStats] = useState({ colis: '--', attente: '--', livres: '--', recuperes: '--', users: '--', admins: '--' });
   const [loading, setLoading] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState(null);
 
-  useEffect(() => {
-    Promise.all([
+  const loadStats = useCallback(async () => {
+    setLoading(true);
+    const results = await Promise.allSettled([
       getNombreColis(),
       getNombreEnAttente(),
       getNombreLivres(),
       getNombreRecuperes(),
       getNombreUtilisateurs(),
       getNombreAdmins(),
-    ]).then(([colis, attente, livres, recuperes, users, admins]) => {
-      setStats({
-        colis:     pick(colis),
-        attente:   pick(attente),
-        livres:    pick(livres),
-        recuperes: pick(recuperes),
-        users:     pick(users),
-        admins:    pick(admins),
-      });
-    }).catch(() => {}).finally(() => setLoading(false));
+    ]);
+    const val = (r, extractor) => r.status === 'fulfilled' ? (extractor(r.value) ?? '--') : '--';
+    setStats({
+      colis:     val(results[0], pick),
+      attente:   val(results[1], pick),
+      livres:    val(results[2], pick),
+      recuperes: val(results[3], pick),
+      users:     val(results[4], pick),
+      admins:    val(results[5], pick),
+    });
+    setLastUpdate(new Date());
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    // loadStats gère son propre setLoading/setStats — c'est intentionnel
+    void loadStats();
+    const interval = setInterval(() => { void loadStats(); }, 60_000);
+    return () => clearInterval(interval);
+  }, [loadStats]);
 
   return (
     <div>
       <div className="page-header">
         <div className="page-header-left">
-          <h1>Vue d'ensemble</h1>
-          <p>Statistiques en temps réel</p>
+          <h1>Vue d&apos;ensemble</h1>
+          {lastUpdate && (
+            <p className="dashboard-last-update">
+              Dernière mise à jour : {lastUpdate.toLocaleTimeString('fr-FR')}
+            </p>
+          )}
         </div>
+        <button className="dashboard-refresh-btn" onClick={loadStats} disabled={loading}>
+          {loading ? 'Chargement…' : '↻ Actualiser'}
+        </button>
       </div>
       <div className="dashboard-grid">
         <StatCard loading={loading} title="Total colis"     value={stats.colis}     color="var(--color-primary)" icon={<><path d="M20 7L12 3L4 7m16 0v10l-8 4m8-14L12 11M4 7v10l8 4M12 11v10"/></>} />

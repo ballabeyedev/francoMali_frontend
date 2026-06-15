@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
+import OfflineBanner from '../common/OfflineBanner';
 import { ROUTES } from '../../constants/routes';
 import useAuth from '../../hooks/useAuth';
 import useInactivityLogout from '../../hooks/useInactivityLogout';
@@ -29,11 +30,13 @@ export default function AdminLayout() {
 
   return (
     <div className={`admin-shell${isOpen ? '' : ' sidebar-collapsed'}`}>
+      <a href="#main-content" className="skip-link">Aller au contenu principal</a>
+      <OfflineBanner />
       {mobileOpen && <div className="sidebar-overlay" onClick={() => setMobile(false)} />}
       <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} mobileOpen={mobileOpen} />
       <div className="admin-main">
         <Topbar pageTitle={title} pageSub={sub} onMobileMenuToggle={() => setMobile(o => !o)} />
-        <main className="admin-content">
+        <main id="main-content" className="admin-content">
           <Outlet />
         </main>
       </div>

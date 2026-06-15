@@ -1,20 +1,24 @@
 import { useEffect, useMemo, useState } from 'react';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
 import ErrorState from '../../components/common/ErrorState';
 import EmptyState from '../../components/common/EmptyState';
 import SearchInput from '../../components/common/SearchInput';
 import Pagination from '../../components/common/Pagination';
 import Badge from '../../components/common/Badge';
+import SkeletonTable from '../../components/common/SkeletonTable';
 import ConfirmModal from '../../components/modals/ConfirmModal';
 import { toast } from '../../utils/toast';
 import useDebounce from '../../hooks/useDebounce';
+import useTitle from '../../hooks/useTitle';
+import useSort from '../../hooks/useSort';
 import { getUtilisateurs, rechercherUtilisateur, activerUtilisateur, desactiverUtilisateur } from '../../api/utilisateurs.api';
 import { formatDate } from '../../utils/formatters';
+import { extractList, extractError } from '../../utils/apiHelpers';
+import { PAGE_SIZE } from '../../constants/ui';
 
-const PAGE_SIZE = 15;
 const isActif = (u) => u.actif ?? u.isActive ?? u.active ?? false;
 
 export default function UtilisateursPage() {
+  useTitle('Utilisateurs');
   const [users, setUsers]     = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
@@ -22,6 +26,7 @@ export default function UtilisateursPage() {
   const [page, setPage]       = useState(1);
   const [confirm, setConfirm] = useState(null);
   const debounced = useDebounce(search, 300);
+  const { sorted, toggle, sortIcon } = useSort(users, null);
 
   const load = async () => {
     setLoading(true);
@@ -30,10 +35,9 @@ export default function UtilisateursPage() {
       const res = debounced.trim()
         ? await rechercherUtilisateur(debounced.trim())
         : await getUtilisateurs();
-      const data = res.data?.utilisateurs ?? res.data?.data ?? res.data ?? [];
-      setUsers(Array.isArray(data) ? data : []);
+      setUsers(extractList(res, 'utilisateurs', 'data'));
     } catch (err) {
-      setError(err?.response?.data?.message || 'Erreur lors du chargement');
+      setError(extractError(err));
     } finally {
       setLoading(false);
     }
@@ -42,10 +46,10 @@ export default function UtilisateursPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); setPage(1); }, [debounced]);
 
-  const totalPages = Math.ceil(users.length / PAGE_SIZE) || 1;
+  const totalPages = Math.ceil((sorted?.length ?? 0) / PAGE_SIZE) || 1;
   const pageItems = useMemo(
-    () => users.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
-    [users, page]
+    () => (sorted ?? []).slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [sorted, page]
   );
 
   const handleConfirm = async () => {
@@ -56,7 +60,7 @@ export default function UtilisateursPage() {
       setConfirm(null);
       load();
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Action impossible');
+      toast.error(extractError(err));
       setConfirm(null);
     }
   };
@@ -69,14 +73,21 @@ export default function UtilisateursPage() {
           <SearchInput value={search} onChange={setSearch} placeholder="Rechercher un utilisateur…" />
         </div>
 
-        {loading ? <LoadingSpinner />
+        {loading ? <SkeletonTable rows={8} cols={7} />
           : error ? <ErrorState message={error} onRetry={load} />
-          : users.length === 0 ? <EmptyState message="Aucun utilisateur trouvé" />
+          : users.length === 0 ? <EmptyState message="Aucun utilisateur trouvé" searchTerm={search} />
           : (
             <div className="table-wrap">
               <table className="data-table">
                 <thead>
-                  <tr><th>Prénom</th><th>Nom</th><th>Email</th><th>Téléphone</th><th>Statut</th><th>Inscription</th><th>Actions</th></tr>
+                  <tr>
+                    <th onClick={() => toggle('prenom')} className="sortable-th" tabIndex={0} role="columnheader">Prénom <span className="sort-icon" aria-hidden="true">{sortIcon('prenom')}</span></th>
+                    <th onClick={() => toggle('nom')} className="sortable-th" tabIndex={0} role="columnheader">Nom <span className="sort-icon" aria-hidden="true">{sortIcon('nom')}</span></th>
+                    <th onClick={() => toggle('email')} className="sortable-th" tabIndex={0} role="columnheader">Email <span className="sort-icon" aria-hidden="true">{sortIcon('email')}</span></th>
+                    <th>Téléphone</th><th>Statut</th>
+                    <th onClick={() => toggle('createdAt')} className="sortable-th" tabIndex={0} role="columnheader">Inscription <span className="sort-icon" aria-hidden="true">{sortIcon('createdAt')}</span></th>
+                    <th>Actions</th>
+                  </tr>
                 </thead>
                 <tbody>
                   {pageItems.map((u) => {
@@ -102,7 +113,7 @@ export default function UtilisateursPage() {
               </table>
             </div>
           )}
-        <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+        <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} totalItems={users.length} />
       </div>
 
       <ConfirmModal

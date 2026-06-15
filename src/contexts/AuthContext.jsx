@@ -1,49 +1,49 @@
 import { useState, useEffect, useCallback } from 'react';
-import { login as apiLogin, logout as apiLogout, getMe } from '../api/auth.api';
-import { getToken, setToken, setUser, getUser, clearSession } from '../utils/storage';
+import { getMe, loginApi, logoutApi } from '../api/auth.api';
+import { getUserId, setUserId, clearSession } from '../utils/storage';
+import { setCsrfToken } from '../api/axiosInstance';
 import { AuthContext } from './authContextObject';
 
-export function AuthProvider({ children }) {
-  const [user, setUserState] = useState(() => getUser());
-  const [isLoading, setIsLoading] = useState(true);
+export { AuthContext };
 
-  useEffect(() => {
-    const init = async () => {
-      const token = getToken();
-      if (!token) { setIsLoading(false); return; }
-      try {
-        const res = await getMe();
-        const u = res.data?.utilisateur || res.data;
-        setUser(u);
-        setUserState(u);
-      } catch {
-        clearSession();
-        setUserState(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    init();
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchMe = useCallback(async () => {
+    if (!getUserId()) { setLoading(false); return; }
+    try {
+      const res = await getMe();
+      setUser(res.data?.utilisateur ?? res.data?.user ?? res.data);
+    } catch {
+      clearSession();
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
+  useEffect(() => { fetchMe(); }, [fetchMe]);
+
   const login = useCallback(async (email, motDePasse) => {
-    const res = await apiLogin(email, motDePasse);
-    const { token, utilisateur } = res.data;
-    setToken(token);
-    setUser(utilisateur);
-    setUserState(utilisateur);
-    return utilisateur;
+    const res = await loginApi(email, motDePasse);
+    const userData = res.data?.utilisateur ?? res.data?.user ?? res.data;
+    const csrfT = res.data?.csrfToken ?? res.headers?.['x-csrf-token'];
+    if (csrfT) setCsrfToken(csrfT);
+    setUserId(userData?.id ?? userData?._id ?? '1');
+    setUser(userData);
+    return userData;
   }, []);
 
   const logout = useCallback(async () => {
-    try { await apiLogout(); } catch { /* ignore */ }
+    try { await logoutApi(); } catch { /* ignore */ }
+    setCsrfToken(null);
     clearSession();
-    setUserState(null);
-    window.location.href = '/francomaliship/auth/login';
+    setUser(null);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

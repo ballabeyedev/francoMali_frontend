@@ -24,6 +24,9 @@ export default defineConfig([
     },
     rules: {
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      // Pattern fetch-on-mount légitime — useCallback wrappant setState appelé depuis useEffect
+      'react-hooks/set-state-in-effect': 'warn',
     },
   },
 ])

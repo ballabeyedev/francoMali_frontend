@@ -4,7 +4,7 @@ import ErrorState from '../../components/common/ErrorState';
 import EmptyState from '../../components/common/EmptyState';
 import Pagination from '../../components/common/Pagination';
 import { formatDate, formatWeight, truncate } from '../../utils/formatters';
-import { typeLabel } from './colisHelpers';
+import { typeLabel } from '../../utils/colisHelpers.jsx';
 
 const PAGE_SIZE = 15;
 

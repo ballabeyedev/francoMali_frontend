@@ -1,18 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
 import ErrorState from '../../components/common/ErrorState';
 import EmptyState from '../../components/common/EmptyState';
 import SearchInput from '../../components/common/SearchInput';
 import Pagination from '../../components/common/Pagination';
 import Badge from '../../components/common/Badge';
+import SkeletonTable from '../../components/common/SkeletonTable';
 import Modal from '../../components/modals/Modal';
 import ConfirmModal from '../../components/modals/ConfirmModal';
 import FormField from '../../components/forms/FormField';
 import FormSelect from '../../components/forms/FormSelect';
 import { toast } from '../../utils/toast';
+import useTitle from '../../hooks/useTitle';
 import { getCountries, createCountry, updateCountry, deleteCountry } from '../../api/countries.api';
+import { extractError } from '../../utils/apiHelpers';
+import { PAGE_SIZE } from '../../constants/ui';
 
-const PAGE_SIZE = 15;
 const EMPTY = { name: '', code: '', isActive: 'true' };
 const STATUS_OPTIONS = [
   { value: 'true', label: 'Actif' },
@@ -22,6 +24,7 @@ const STATUS_OPTIONS = [
 const extract = (res) => res.data?.data ?? res.data?.countries ?? res.data ?? [];
 
 export default function CountriesPage() {
+  useTitle('Pays');
   const [countries, setCountries] = useState([]);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState(null);
@@ -42,7 +45,7 @@ export default function CountriesPage() {
       const data = extract(res);
       setCountries(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError(err?.response?.data?.message || 'Erreur lors du chargement des pays');
+      setError(extractError(err));
     } finally {
       setLoading(false);
     }
@@ -102,7 +105,7 @@ export default function CountriesPage() {
       setShowForm(false);
       load();
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Enregistrement impossible');
+      toast.error(extractError(err));
     } finally {
       setSaving(false);
     }
@@ -116,7 +119,7 @@ export default function CountriesPage() {
       setConfirmDel(null);
       load();
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Suppression impossible');
+      toast.error(extractError(err));
       setConfirmDel(null);
     }
   };
@@ -132,9 +135,9 @@ export default function CountriesPage() {
           </div>
         </div>
 
-        {loading ? <LoadingSpinner />
+        {loading ? <SkeletonTable rows={8} cols={4} />
           : error ? <ErrorState message={error} onRetry={load} />
-          : filtered.length === 0 ? <EmptyState message="Aucun pays trouvé" />
+          : filtered.length === 0 ? <EmptyState message="Aucun pays trouvé" searchTerm={search} />
           : (
             <div className="table-wrap">
               <table className="data-table">
@@ -159,7 +162,7 @@ export default function CountriesPage() {
               </table>
             </div>
           )}
-        <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+        <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} totalItems={filtered.length} />
       </div>
 
       <Modal
